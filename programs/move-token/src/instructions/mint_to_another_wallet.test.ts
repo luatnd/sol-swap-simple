@@ -4,7 +4,7 @@ import {MoveToken} from "../../../../target/types/move_token";
 import {getCurrentProvider, getProviderWallet, getTestTokenMetadata} from "../../../../tests/helpers/test-env";
 import {getPrevMintTokenInfoFromTmpData} from "./create_token.test";
 import {sleep} from "../../../../tests/helpers/time";
-import {expect} from "chai";
+import {assert, expect} from "chai";
 import {airdropSOL} from "../../../../tests/helpers/token";
 
 
@@ -26,7 +26,7 @@ async function mintTokenToAnyWallet(program: Program<MoveToken>) {
   // const RECIPIENT_ADDR = "CKsW2dWontvwCJTyesYEbZ8nScx8LiL1utjkvmwhHLkT";
   const RECIPIENT_ADDR = anchor.web3.Keypair.generate().publicKey; // airdrop each user once and only once
 
-
+  const provider = getCurrentProvider();
   const payer = getProviderWallet(); // use my wallet to pay mint fee
   const tokenInfo = getTestTokenMetadata();
 
@@ -56,6 +56,11 @@ async function mintTokenToAnyWallet(program: Program<MoveToken>) {
   });
   console.log(`associatedTokenAccount: ${recipientAta}`);
 
+  let oldRecipientSplBalance = 0;
+  try {
+    oldRecipientSplBalance = (await provider.connection.getTokenAccountBalance(recipientAta)).value.uiAmount;
+  } catch (e) {}
+
   const tx = await program.methods.mintToAnotherWallet(
     new anchor.BN(AIR_DROP_AMOUNT * Math.pow(10, tokenInfo.decimals)),
     mintAuthorityPdaBump
@@ -74,7 +79,10 @@ async function mintTokenToAnyWallet(program: Program<MoveToken>) {
     .signers([payer.payer])
     .rpc();
   console.log("{mintTokenToAnyWallet} tx", tx);
+  assert(!!tx, "Tx should not be empty");
 
-  // TODO: Test case: Balance of recipient should be increased by X, owner by -X
-
+  // Test case: Balance of recipient should be increased by X
+  const newRecipientSplBalance = (await provider.connection.getTokenAccountBalance(recipientAta)).value.uiAmount;
+  const EPSILON = 1e-6;
+  expect(newRecipientSplBalance - oldRecipientSplBalance).to.be.approximately(AIR_DROP_AMOUNT, EPSILON, `Balance of recipient should be increased by ${AIR_DROP_AMOUNT} tokens`);
 }

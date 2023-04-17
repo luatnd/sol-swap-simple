@@ -30,7 +30,7 @@ export async function airDropSolIfBalanceLowerThan(amountInSol: number, recipien
 export async function getSqlTokenBalanceOf(
   owner: anchor.web3.PublicKey,
   tokenMintAddress: anchor.web3.PublicKey
-) {
+): Promise<anchor.web3.TokenAmount> {
   const provider = getCurrentProvider();
   // ata stands for Associated Token Address
   const ata = await anchor.utils.token.associatedAddress({
