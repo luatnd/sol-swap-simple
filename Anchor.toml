@@ -1,6 +1,7 @@
 [features]
 seeds = false
 skip-lint = false
+
 [programs.localnet]
 simple_liquidity_pool = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
 
@@ -12,4 +13,7 @@ cluster = "Localnet"
 wallet = "/Users/macos/.config/solana/id.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+#test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 programs/**/lib.test.ts"
+test-program="yarn test-program"
+test-only = "yarn test-only"
