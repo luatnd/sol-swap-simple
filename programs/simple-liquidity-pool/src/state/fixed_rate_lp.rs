@@ -59,6 +59,10 @@ pub enum SwapDir {
   QuoteToBase,
 }
 
+impl FixedRateLP {
+  // pub const SEED_PREFIX: &'static [u8] = b"FixedRateLP_";
+  pub const MAXIMUM_SIZE: usize = 4 + 32 + 32 + 1 + 1 + 1;
+}
 
 
 //
