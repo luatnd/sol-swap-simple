@@ -29,4 +29,18 @@ pub mod move_token {
       mint_authority_pda_bump,
     )
   }
+
+  pub fn mint_to_another_wallet(
+    ctx: Context<MintToAnotherWallet>,
+    amount: u64,
+    mint_authority_pda_bump: u8,
+  ) -> Result<()> {
+    require!(amount <= 1000 * 10_u64.pow(TOKEN_DECIMAL as u32), MoveTokenError::InvalidAirDropAmount);
+
+    mint_to_another_wallet::mint_to_another_wallet(
+      ctx,
+      amount,
+      mint_authority_pda_bump,
+    )
+  }
 }

@@ -4,4 +4,6 @@ use anchor_lang::prelude::*;
 pub enum MoveTokenError {
   #[msg("Uncategorized")]
   Uncategorized,
+  #[msg("Cannot airdrop greater than 1000")]
+  InvalidAirDropAmount,
 }
