@@ -3,17 +3,27 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-simple_liquidity_pool = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+move_token = "2simM1gHuCgquAVi2B1Q4baiU6UAxkNrrHEWkfcu3RaH"
+simple_liquidity_pool = "EETwc5hZxJsn4DYczvNupCnmDMwbCVb2YLFRQ7CWgEea"
+
+[programs.devnet]
+move_token = "2simM1gHuCgquAVi2B1Q4baiU6UAxkNrrHEWkfcu3RaH"
+simple_liquidity_pool = "EETwc5hZxJsn4DYczvNupCnmDMwbCVb2YLFRQ7CWgEea"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+#cluster = "Localnet"
+cluster = "devnet"
 wallet = "/Users/macos/.config/solana/id.json"
 
 [scripts]
 #test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 programs/**/lib.test.ts"
+#-- test a single program, read README.md for more detail
+#-- Eg:
 test-program="yarn test-program"
+#-- test a single test file, or any matching pattern, read README.md for more detail
+#-- Eg: anchor run test-only -- tests/tmp/tmp.ts
 test-only = "yarn test-only"

@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("EETwc5hZxJsn4DYczvNupCnmDMwbCVb2YLFRQ7CWgEea");
 
 #[program]
 pub mod simple_liquidity_pool {
