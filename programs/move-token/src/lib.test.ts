@@ -6,7 +6,7 @@ import test__mintTokenToOtherWallet from "./instructions/mint_to_another_wallet.
 
 const tests = [
   // TODO: run test__create_token once then comment it out when you don't wanna generate any new token
-  // test__create_token,
+  test__create_token,
   test__mintTokenToOtherWallet,
   test__exampleTestRequireAllSubModule,
 ];
