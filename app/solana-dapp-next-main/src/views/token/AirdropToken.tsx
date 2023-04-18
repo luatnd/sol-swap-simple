@@ -6,17 +6,20 @@ import {AnchorBrowserClient} from "../../utils/anchor-client-js/AnchorBrowserCli
 import {airdropToken, createNewToken} from "./service/TokenService";
 import * as anchor from "@project-serum/anchor";
 import TxSuccessMsg from "../../components/TxSuccessMsg";
+import {fetchPrevMintToken} from "../swap/service/token";
 
 type Props = {}
 export default function AirdropToken(props: Props) {
   const wallet = useAnchorWallet();
   const { connection } = useConnection();
 
+  const myToken = fetchPrevMintToken();
+
   // form data
   const [tokenDisplay, setTokenDisplay] = useState({name: "", symbol: ""});
   const [amount, setAmount] = useState<string>("");
   const [recipient, setRecipient] = useState<string>("");
-  const [tma, setTma] = useState<string>("");
+  const [tma, setTma] = useState<string>(myToken.address?.toString() ?? "");
   const [tx, setTx] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -31,6 +34,14 @@ export default function AirdropToken(props: Props) {
   //     })
   //   }
   // }, [tma])
+  useEffect(() => {
+    if (tma === myToken.address?.toString()) {
+      setTokenDisplay({name: myToken.name, symbol: myToken.symbol});
+    } else {
+      setTokenDisplay({name: "", symbol: ""});
+    }
+  }, [tma]);
+
 
   const submitForm = useCallback(() => {
     // need wallet connected
@@ -93,7 +104,7 @@ export default function AirdropToken(props: Props) {
 
         <button
           type="submit"
-          className={`${loading ? 'loading' : ''} group w-60 m-2 btn animate-pulse disabled:animate-none bg-gradient-to-r from-[#9945FF] to-[#14F195] hover:from-pink-500 hover:to-yellow-500 ... `}
+          className={`${loading ? 'loading animate-pulse' : ''} group w-60 m-2 btn disabled:animate-none bg-gradient-to-r from-[#9945FF] to-[#14F195] hover:from-pink-500 hover:to-yellow-500 ... `}
           disabled={!(wallet && wallet.publicKey)}
         >
           <div className="hidden group-disabled:block ">

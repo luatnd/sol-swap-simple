@@ -44,12 +44,21 @@ export default observer(function CreateToken(props: Props) {
     createNewToken(tokenName, tokenSymbol, tokenSupply, metadataUri, {
       wallet: wallet as anchor.Wallet,
       connection,
-    }).then((tx) => {
+    }).then(({tx, metadata, tma}) => {
+      // success
       setTx(tx);
       // hide alert box after 20s
       setTimeout(() => {
         setTx("");
       }, 60000)
+
+      // save to local-storage
+      localStorage.setItem("lastMintedToken", JSON.stringify({
+        name: tokenName,
+        symbol: tokenSymbol,
+        image: metadata?.image ?? undefined,
+        address: tma,
+      }));
     }).catch(e => {
       console.error('{createNewToken} e: ', e);
       notify({type: "error", message: e.message, txid: tx});
@@ -77,7 +86,7 @@ export default observer(function CreateToken(props: Props) {
 
         <button
           type="submit"
-          className={`${loading ? 'loading' : ''} group w-60 m-2 btn animate-pulse disabled:animate-none bg-gradient-to-r from-[#9945FF] to-[#14F195] hover:from-pink-500 hover:to-yellow-500 ... `}
+          className={`${loading ? 'loading animate-pulse' : ''} group w-60 m-2 btn disabled:animate-none bg-gradient-to-r from-[#9945FF] to-[#14F195] hover:from-pink-500 hover:to-yellow-500 ... `}
           disabled={!(wallet && wallet.publicKey)}
         >
           <div className="hidden group-disabled:block ">
