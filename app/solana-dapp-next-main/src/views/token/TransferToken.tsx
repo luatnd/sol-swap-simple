@@ -5,7 +5,10 @@ export default function TransferToken(props: Props) {
   const { publicKey, sendTransaction } = useWallet();
 
   return (
-    <div className="CreateTokenForm">
+    <div className="CreateTokenForm relative">
+      <div className="mask-bg absolute w-full h-full bg-black/40 top-0 left-0 flex items-center">
+        <p>Don't have time to implement this feature, plz see the anchor test case for somewhat how it works</p>
+      </div>
 
       <form onSubmit={(e) => { e.preventDefault(); alert(); }} >
         <div className="content-center">
@@ -20,7 +23,7 @@ export default function TransferToken(props: Props) {
 
         <button
           type="submit"
-          className="group w-60 m-2 btn animate-pulse disabled:animate-none bg-gradient-to-r from-[#9945FF] to-[#14F195] hover:from-pink-500 hover:to-yellow-500 ... "
+          className={`${false ? 'loading animate-pulse' : ''} group w-60 m-2 btn disabled:animate-none bg-gradient-to-r from-[#9945FF] to-[#14F195] hover:from-pink-500 hover:to-yellow-500 ... `}
           disabled={!publicKey}
         >
           <div className="hidden group-disabled:block ">
