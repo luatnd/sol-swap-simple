@@ -66,4 +66,20 @@ export class AnchorBrowserClient {
   static isDevNet(connection) {
     return AnchorBrowserClient.getCluster(connection) === 'devnet';
   }
+
+  // static getTokenMetadata(tokenMintAddress: string, connection: anchor.web3.Connection, wallet: anchor.Wallet) {
+  //   const TOKEN_METADATA_PROGRAM_ID = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s";
+  //   const tokenMetadataProgramId = new anchor.web3.PublicKey(TOKEN_METADATA_PROGRAM_ID);
+  //   const program = new anchor.Program(TokenMetadataIdl, tokenMetadataProgramId, this.getProvider(connection, wallet));
+  //
+  //   const [metadata, metadataBump] = anchor.web3.PublicKey.findProgramAddressSync(
+  //     [
+  //       Buffer.from("metadata"),
+  //       new anchor.web3.PublicKey(tokenMintAddress).toBuffer(),
+  //     ],
+  //     program.programId,
+  //   );
+  //
+  //   return program.account.metadata.fetch(metadata);
+  // }
 }

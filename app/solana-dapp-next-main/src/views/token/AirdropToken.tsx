@@ -1,25 +1,100 @@
-import {useWallet} from "@solana/wallet-adapter-react";
+import {useAnchorWallet, useConnection, useWallet} from "@solana/wallet-adapter-react";
+import TokenStore from "./service/TokenStore";
+import {useCallback, useEffect, useState} from "react";
+import {notify} from "../../utils/notifications";
+import {AnchorBrowserClient} from "../../utils/anchor-client-js/AnchorBrowserClient";
+import {airdropToken, createNewToken} from "./service/TokenService";
+import * as anchor from "@project-serum/anchor";
+import TxSuccessMsg from "../../components/TxSuccessMsg";
 
 type Props = {}
 export default function AirdropToken(props: Props) {
-  const { publicKey, sendTransaction } = useWallet();
+  const wallet = useAnchorWallet();
+  const { connection } = useConnection();
+
+  // form data
+  const [tokenDisplay, setTokenDisplay] = useState({name: "", symbol: ""});
+  const [amount, setAmount] = useState<string>("");
+  const [recipient, setRecipient] = useState<string>("");
+  const [tma, setTma] = useState<string>("");
+  const [tx, setTx] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+
+  // useEffect(() => {
+  //   // get token name and symbol from token mint address
+  //   if (tma) {
+  //     AnchorBrowserClient.getTokenInfo(tma, connection).then((res) => {
+  //       setTokenDisplay({
+  //         name: "TODO",
+  //         symbol: "TODO",
+  //       });
+  //     })
+  //   }
+  // }, [tma])
+
+  const submitForm = useCallback(() => {
+    // need wallet connected
+    if (!wallet) {
+      notify({type: "error", message: `Plz connect wallet first`});
+      return;
+    }
+
+    // support devnet only
+    if (!AnchorBrowserClient.isDevNet(connection)) {
+      // throw new Error("devnet is required")
+      notify({type: "error", message: "Devnet is required"});
+      return;
+    }
+
+    setLoading(true);
+    airdropToken(tma, parseFloat(amount), recipient, {
+      wallet: wallet as anchor.Wallet,
+      connection,
+    }).then((tx) => {
+      setTx(tx);
+      // hide alert box after 20s
+      setTimeout(() => {
+        setTx("");
+      }, 60000)
+    }).catch(e => {
+      console.error('{createNewToken} e: ', e);
+      notify({type: "error", message: e.message});
+    }).finally(() => {
+      setLoading(false);
+    })
+  }, [tma, amount, recipient, wallet, connection]);
+
 
   return (
     <div className="CreateTokenForm">
-      <form onSubmit={(e) => { e.preventDefault(); alert(); }} >
+      <form onSubmit={(e) => { e.preventDefault(); submitForm(); }} >
         <div className="content-center">
           <div className="mt-6 mb-6 text-left leading-10">
-            You're going to airdrop<br/>
-            <input type="number" placeholder="1000" className="input input-bordered mr-2 w-28" /> <b>LUAT</b><br/>
-            to the <b>recipient wallet</b> <input type="text" placeholder="" className="input input-bordered mr-2 w-28" /><br/>
+            <p className="leading-6">
+              <small>This is not kind of Faucet that anyone can use their wallet to claim your token. You will mint to their wallet.</small>
+            </p>
+
+            1. What is <b>Token Mint Address</b> of the token you wanna airdrop?<br/>
+            <input type="text" placeholder="" name="tma" value={tma} onChange={(e) => setTma(e.target.value)} required className="input input-bordered mr-2 w-full" /> <br/>
+            <small>Only airdrop the token you've mint</small>
+            <br/>
+
+            2. You're going to airdrop (mint, not transfer)<br/>
+            <input type="number" placeholder="1000" name="amount" value={amount} onChange={(e) => setAmount(e.target.value)} required className="input input-bordered mr-2 w-28" /> <b>{!tokenDisplay.symbol ? 'tokens' : `${tokenDisplay.name} (${tokenDisplay.symbol})`}</b><br/>
+            to the <b>recipient wallet</b> <input type="text" placeholder="" name="rec" value={recipient} onChange={(e) => setRecipient(e.target.value)} required className="input input-bordered mr-2 w-48" /><br/>
             You will be the tx fee payer.
+
+            <br/>
+            NOTE: I skipped all the client side input validation
           </div>
         </div>
 
+        <TxSuccessMsg tx={tx}/>
+
         <button
           type="submit"
-          className="group w-60 m-2 btn animate-pulse disabled:animate-none bg-gradient-to-r from-[#9945FF] to-[#14F195] hover:from-pink-500 hover:to-yellow-500 ... "
-          disabled={!publicKey}
+          className={`${loading ? 'loading' : ''} group w-60 m-2 btn animate-pulse disabled:animate-none bg-gradient-to-r from-[#9945FF] to-[#14F195] hover:from-pink-500 hover:to-yellow-500 ... `}
+          disabled={!(wallet && wallet.publicKey)}
         >
           <div className="hidden group-disabled:block ">
             Wallet not connected

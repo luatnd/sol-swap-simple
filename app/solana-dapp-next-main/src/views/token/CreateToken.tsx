@@ -24,6 +24,7 @@ export default observer(function CreateToken(props: Props) {
   } = TokenStore;
 
   const [tx, setTx] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
 
   const submitForm = useCallback(() => {
     // need wallet connected
@@ -39,6 +40,7 @@ export default observer(function CreateToken(props: Props) {
       return;
     }
 
+    setLoading(true);
     createNewToken(tokenName, tokenSymbol, tokenSupply, metadataUri, {
       wallet: wallet as anchor.Wallet,
       connection,
@@ -48,6 +50,11 @@ export default observer(function CreateToken(props: Props) {
       setTimeout(() => {
         setTx("");
       }, 60000)
+    }).catch(e => {
+      console.error('{createNewToken} e: ', e);
+      notify({type: "error", message: e.message, txid: tx});
+    }).finally(() => {
+      setLoading(false);
     })
   }, [tokenName, tokenSymbol, tokenSupply, metadataUri, setTx, wallet, connection]);
 
@@ -61,11 +68,16 @@ export default observer(function CreateToken(props: Props) {
           <span className="mr-44">with 9 <b>decimals</b></span><br/>
           and <b>metadata uri</b> <input type="text" placeholder="https://" value={metadataUri} onChange={(e) => TokenStore.set("metadataUri", e.target.value)} required className="input input-bordered mr-2 w-40" /><br/>
           <b>initial supply</b> will be <input type="number" placeholder="1000" value={tokenSupply} onChange={(e) => TokenStore.set("tokenSupply", e.target.value)} required className="input input-bordered mr-2 w-36" /><br/>
+
+          <br/>
+          NOTE: I skipped all the client side input validation
         </div>
+
+        <TxSuccessMsg tx={tx}/>
 
         <button
           type="submit"
-          className="group w-60 m-2 btn animate-pulse disabled:animate-none bg-gradient-to-r from-[#9945FF] to-[#14F195] hover:from-pink-500 hover:to-yellow-500 ... "
+          className={`${loading ? 'loading' : ''} group w-60 m-2 btn animate-pulse disabled:animate-none bg-gradient-to-r from-[#9945FF] to-[#14F195] hover:from-pink-500 hover:to-yellow-500 ... `}
           disabled={!(wallet && wallet.publicKey)}
         >
           <div className="hidden group-disabled:block ">
@@ -76,8 +88,6 @@ export default observer(function CreateToken(props: Props) {
           </div>
         </button>
       </form>
-
-      <TxSuccessMsg tx={tx}/>
     </div>
   );
 });

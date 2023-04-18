@@ -47,7 +47,7 @@ const NotificationList = () => {
 const Notification = ({ type, message, description, txid, onHide }) => {
   const { connection } = useConnection();
 
-  // TODO: we dont have access to the network or endpoint here.. 
+  // TODO: we dont have access to the network or endpoint here..
   // getExplorerUrl(connection., txid, 'tx')
   // Either a provider, context, and or wallet adapter related pro/contx need updated
 
@@ -55,7 +55,7 @@ const Notification = ({ type, message, description, txid, onHide }) => {
   useEffect(() => {
     const id = setTimeout(() => {
       onHide()
-    }, 8000);
+    }, 15000);
 
     return () => {
       clearInterval(id);
@@ -84,7 +84,7 @@ const Notification = ({ type, message, description, txid, onHide }) => {
             ) : null}
             {txid ? (
               <div className="flex flex-row">
-         
+
                 <a
                   href={'https://explorer.solana.com/tx/' + txid + `?cluster=devnet`}
                   target="_blank"
