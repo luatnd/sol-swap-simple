@@ -33,7 +33,7 @@ const Home: NextPage = (props) => {
               <a className={`tab tab-lifted ${tab === 1 ? 'tab-active' : ''}`} onClick={() => setTab(1)}>Airdrop</a>
               <a className={`tab tab-lifted ${tab === 2 ? 'tab-active' : ''}`} onClick={() => setTab(2)}>Transfer</a>
             </div>
-            <div className="tab-content">
+            <div className="tab-content w-full max-w-sm">
               {tab === 0 && <CreateToken />}
               {tab === 1 && <AirdropToken />}
               {tab === 2 && <TransferToken />}

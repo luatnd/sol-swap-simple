@@ -47,4 +47,28 @@ TODO: Don't have time to write it but there was an example at:
 - TMA: Token Mint Address (Token Address, Mint, ...)
 
 # Development
-FE: Remember to run `anchor build` `yarn sync-output-to-fe` first to do some code gen for FE
+### BE
+1. Deploy to devnet
+Because we use metaplex so you either need to deploy mpl to localnet or using devnet
+```
+anchor build
+anchor deploy
+```
+
+2. Run test in devnet
+```
+anchor run test
+```
+
+3. Sync the IDL to FE repos:
+```
+anchor build
+yarn sync-output-to-fe
+```
+
+### FE
+Remember to do "BE > Sync the IDL to FE repos" first to do some code gen for FE.
+
+```
+yarn dev
+```

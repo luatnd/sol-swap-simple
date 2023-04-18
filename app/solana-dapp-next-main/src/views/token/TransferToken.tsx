@@ -7,7 +7,7 @@ export default function TransferToken(props: Props) {
   return (
     <div className="CreateTokenForm">
 
-      <form action="#">
+      <form onSubmit={(e) => { e.preventDefault(); alert(); }} >
         <div className="content-center">
           <div className="mt-6 mb-6 text-left leading-10">
             You're going to transfer<br/>
@@ -21,7 +21,7 @@ export default function TransferToken(props: Props) {
         <button
           type="submit"
           className="group w-60 m-2 btn animate-pulse disabled:animate-none bg-gradient-to-r from-[#9945FF] to-[#14F195] hover:from-pink-500 hover:to-yellow-500 ... "
-          onClick={() => {}} disabled={!publicKey}
+          disabled={!publicKey}
         >
           <div className="hidden group-disabled:block ">
             Wallet not connected
