@@ -2,7 +2,7 @@
 - Token mint demo
 - Swap demo with fixed rate LP (not AMM)
 
-Demo UI here: https:// TODO
+Demo UI here: https:// TODO deploy a static website and paste link here
 
 # Test
 ### Run all test
