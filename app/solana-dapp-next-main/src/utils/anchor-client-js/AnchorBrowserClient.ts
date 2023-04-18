@@ -47,4 +47,23 @@ export class AnchorBrowserClient {
 
     return res;
   }
+
+  static getCluster(connection: anchor.web3.Connection): anchor.web3.Cluster {
+    const rpcUrl = connection?.rpcEndpoint;
+    if (rpcUrl.indexOf('devnet.') > -1) {
+      return 'devnet';
+    }
+    if (rpcUrl.indexOf('api.solana') > -1) {
+      return 'mainnet-beta';
+    }
+    if (rpcUrl.indexOf('testnet') > -1) {
+      return 'testnet';
+    }
+
+    return undefined;
+  }
+
+  static isDevNet(connection) {
+    return AnchorBrowserClient.getCluster(connection) === 'devnet';
+  }
 }

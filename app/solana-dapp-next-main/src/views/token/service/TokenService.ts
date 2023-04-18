@@ -10,8 +10,8 @@ export async function createNewToken(
   tokenSupply: number,
   metadataUri: string,
   data: {
-    anchorWallet: anchor.Wallet,
-    web3Wallet: SolAdapterWallet,
+    wallet: anchor.Wallet,
+    // web3Wallet: SolAdapterWallet,
     connection: anchor.web3.Connection,
   },
 ) {
@@ -27,7 +27,7 @@ export async function createNewToken(
     return;
   }
 
-  const {anchorWallet: wallet, web3Wallet, connection} = data;
+  const {wallet, connection} = data;
   const provider = AnchorBrowserClient.getProvider(connection, wallet);
 
   const TOKEN_PROGRAM_ID = "CpCRu5ziJbffaFLxxY1gQPV2Lpyq8iBecLweZUH8Rngu"; // TODO: do not hard code in prod

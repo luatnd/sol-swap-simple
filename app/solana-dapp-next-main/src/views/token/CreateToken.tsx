@@ -7,11 +7,12 @@ import {notify} from "../../utils/notifications";
 import {getExplorerUrlOfTx} from "../../utils/anchor-client-js/utils";
 import TokenStore from "./service/TokenStore";
 import {createNewToken} from "./service/TokenService";
+import {AnchorBrowserClient} from "../../utils/anchor-client-js/AnchorBrowserClient";
+import TxSuccessMsg from "../../components/TxSuccessMsg";
 
 type Props = {}
 export default observer(function CreateToken(props: Props) {
   const wallet = useAnchorWallet();
-  const walletWeb3 = useWallet();
   const { connection } = useConnection();
 
   // form data
@@ -25,14 +26,21 @@ export default observer(function CreateToken(props: Props) {
   const [tx, setTx] = useState<string>("");
 
   const submitForm = useCallback(() => {
+    // need wallet connected
     if (!wallet) {
       notify({type: "error", message: `Plz connect wallet first`});
       return;
     }
 
+    // support devnet only
+    if (!AnchorBrowserClient.isDevNet(connection)) {
+      // throw new Error("devnet is required")
+      notify({type: "error", message: "Devnet is required"});
+      return;
+    }
+
     createNewToken(tokenName, tokenSymbol, tokenSupply, metadataUri, {
-      anchorWallet: wallet as anchor.Wallet,
-      web3Wallet: walletWeb3.wallet,
+      wallet: wallet as anchor.Wallet,
       connection,
     }).then((tx) => {
       setTx(tx);
@@ -69,15 +77,7 @@ export default observer(function CreateToken(props: Props) {
         </button>
       </form>
 
-      {!!tx && <div className="alert alert-success shadow-lg">
-        <div>
-          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          <span>
-            Success, view on explorer:<br/>
-            <a href={getExplorerUrlOfTx(tx, "devnet")} target="_blank" className="break-all">{getExplorerUrlOfTx(tx, "devnet")}</a>
-          </span>
-        </div>
-      </div>}
+      <TxSuccessMsg tx={tx}/>
     </div>
   );
 });
