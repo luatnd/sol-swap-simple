@@ -24,3 +24,9 @@ a {
   background-color: #707070;
 }
 
+.tab-lifted.tab-active {
+  --tab-bg: #12584b;
+}
+b {
+  color: #915ef2;
+}
