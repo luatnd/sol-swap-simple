@@ -59,12 +59,6 @@ pub enum SwapDir {
   QuoteToBase,
 }
 
-impl FixedRateLP {
-  // pub const SEED_PREFIX: &'static [u8] = b"FixedRateLP_";
-  pub const MAXIMUM_SIZE: usize = 4 + 32 + 32 + 1 + 1 + 1;
-}
-
-
 //
 // Mark as constant to Expose to Idl
 // constant macro inside struct scope will not be exposed to Idl
@@ -81,6 +75,24 @@ pub const LP_RATE_DECIMAL: u8 = 3;
 /// Swap fee will be deducted directly on to_amount, not from_amount
 #[constant]
 pub const LP_SWAP_FEE_PERMIL: u8 = 50; // 50/1000 = 5.0%
+
+
+impl FixedRateLP {
+  // pub const SEED_PREFIX: &'static [u8] = b"FixedRateLP_";
+  pub const MAXIMUM_SIZE: usize = 4 + 32 + 32 + 1 + 1 + 1;
+
+  pub fn get_swap_dir(&self, from_token: Pubkey, to_token: Pubkey) -> Option<SwapDir> {
+    let mut swap_dir: Option<SwapDir> = None;
+    // if from_token is base token and to_token is quote token then swap_dir=BaseToQuote
+    if from_token == self.token_base && to_token == self.token_quote {
+      swap_dir = Option::from(SwapDir::BaseToQuote)
+    } else if from_token == self.token_quote && to_token == self.token_base {
+      swap_dir = Option::from(SwapDir::QuoteToBase)
+    }
+
+    swap_dir
+  }
+}
 
 
 // impl LP for FixedRateLP {
@@ -117,6 +129,65 @@ impl FixedRateLP {
 
     Ok(())
   }
+
+  ///
+  /// Return (
+  ///   SwapDir,
+  ///   from_amount: base token change amount,
+  ///   to_amount_without_fee: quote token change amount,
+  ///   fee: the fee deducted on to_amount,
+  /// )
+  ///
+  pub fn preview_swap(
+    &mut self,
+    from_token: Pubkey,
+    to_token: Pubkey,
+    from_amount: u64,
+    current_base_liquidity: u64,
+    current_quote_liquidity: u64,
+  ) -> Result<(SwapDir, u64, u64, u64)> {
+    require_gt!(from_amount, 0, LpBaseError::InvalidSwapAmount);
+
+    let swap_direction = self.get_swap_dir(from_token, to_token);
+    require!(swap_direction.is_some(), LpBaseError::InvalidSwapToken);
+
+    let swap_dir = swap_direction.unwrap();
+    // let (current_base_liquidity, current_quote_liquidity) = FixedRateLP::get_current_liquidity();
+
+    let verbose = false;
+    if verbose { msg!("[preview_swap] current base, quote liquidity: {}, {}", current_base_liquidity, current_quote_liquidity); }
+
+    let rate: f64 = self.rate as f64 / 1000_f64;
+    if verbose { msg!("[preview_swap] rate: {}", rate); }
+
+    let to_amount = match swap_dir {
+      SwapDir::BaseToQuote => {
+        let to_amount = (from_amount as f64 * rate) as u64;
+        require!(to_amount <= current_quote_liquidity, LpBaseError::InsufficientQuoteAmount);
+        to_amount
+      },
+      SwapDir::QuoteToBase => {
+        let to_amount = (from_amount as f64 / rate) as u64;
+        require!(to_amount <= current_base_liquidity, LpBaseError::InsufficientBaseAmount);
+        to_amount
+      }
+    };
+    if verbose { msg!("[preview_swap] to_amount: {}", to_amount); }
+
+    let fee = FixedRateLP::get_swap_fee(to_amount);
+
+    Ok((swap_dir, from_amount, to_amount, fee))
+  }
+
+  fn get_swap_fee(to_amount: u64) -> u64 {
+    return to_amount * (LP_SWAP_FEE_PERMIL as u64) / 1000;
+  }
+
+  // /// @return (current_base_amount_available, current_quote_amount_available)
+  // fn get_current_liquidity() -> (u64, u64) {
+  //   return (0, 0);
+  //   // todo!()
+  // }
 }
 
 

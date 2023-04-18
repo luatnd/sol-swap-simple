@@ -4,11 +4,11 @@ skip-lint = false
 
 [programs.localnet]
 move_token = "2simM1gHuCgquAVi2B1Q4baiU6UAxkNrrHEWkfcu3RaH"
-simple_liquidity_pool = "EETwc5hZxJsn4DYczvNupCnmDMwbCVb2YLFRQ7CWgEea"
+simple_liquidity_pool = "J7abyCWmhnmf6aDN5ibLrbvjTYTbPbx5myDt1BQuUE9P"
 
 [programs.devnet]
 move_token = "2simM1gHuCgquAVi2B1Q4baiU6UAxkNrrHEWkfcu3RaH"
-simple_liquidity_pool = "EETwc5hZxJsn4DYczvNupCnmDMwbCVb2YLFRQ7CWgEea"
+simple_liquidity_pool = "J7abyCWmhnmf6aDN5ibLrbvjTYTbPbx5myDt1BQuUE9P"
 
 [registry]
 url = "https://api.apr.dev"

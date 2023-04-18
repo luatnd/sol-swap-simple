@@ -11,8 +11,6 @@ import {getPrevLpPairFromTmpData, getThisProgramConstants, persistPrevLpPairToTm
 
 
 export default function test__init(program: Program<SimpleLiquidityPool>) {
-  // NOTE: This test must run only once per liquidity pair,
-  // because init will success only if pair was not exist
   it("can init lp and can init only once", async () => test_init_lp_only_once(program));
   it("Other wallet cannot init same pair", async () => test_reinit_lp_by_other_wallet(program));
 }

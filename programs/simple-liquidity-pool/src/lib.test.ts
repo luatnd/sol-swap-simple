@@ -3,10 +3,12 @@ import {SimpleLiquidityPool} from "../../../target/types/simple_liquidity_pool";
 import testProgram from "../../../tests/helpers/testProgram";
 import test__init from "./instructions/init.test";
 import test__add_liquidity from "./instructions/add_lp.test";
+import test__swap from "./instructions/swap.test";
 
 const tests = [
   test__init,
   test__add_liquidity,
+  test__swap,
   // test__fullFlow,
 ];
 testProgram<SimpleLiquidityPool>("SimpleLiquidityPool", tests)
