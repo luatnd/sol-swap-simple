@@ -20,7 +20,7 @@ export default function SwapForm(props: Props) {
   const myToken = fetchPrevMintToken();
   const tokenAddresses = useMemo(() => {
     return [solToken.address, myToken.address];
-  }, [solToken.address, myToken.address])
+  }, [solToken.address.toString(), myToken.address?.toString()])
   // change this to re-fetch all the balances
   const [refreshBalanceNonce, setRefreshBalanceNonce] = useState(0);
   const [mySolBalance, myTokenBalance] = useMyBalances(tokenAddresses, refreshBalanceNonce);
