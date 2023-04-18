@@ -19,12 +19,12 @@ export const ContentContainer: FC = props => {
           </li>
           <li>
             <Link href="/">
-              <a>Home</a>
+              <a>Token</a>
             </Link>
           </li>
           <li>
-            <Link href="/basics">
-              <a>Basics</a>
+            <Link href="/swap">
+              <a>Swap</a>
             </Link>
           </li>
         </ul>

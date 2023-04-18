@@ -9,6 +9,8 @@ import TokenStore from "./service/TokenStore";
 import {createNewToken} from "./service/TokenService";
 import {AnchorBrowserClient} from "../../utils/anchor-client-js/AnchorBrowserClient";
 import TxSuccessMsg from "../../components/TxSuccessMsg";
+import {MyToken} from "../swap/service/token";
+import {useRouter} from "next/router";
 
 type Props = {}
 export default observer(function CreateToken(props: Props) {
@@ -105,3 +107,28 @@ export default observer(function CreateToken(props: Props) {
     </div>
   );
 });
+
+
+export function TokenNotExist(props: { myToken: MyToken }) {
+  const router = useRouter();
+  const { myToken } = props;
+
+  return (
+    <div className="InitSwapForm">
+      {!myToken.address && (
+        <div className="alert alert-warning shadow-lg">
+          <div>
+            <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            <span>&nbsp;This demo require a mint token, please mint it first on the Token page.</span>
+          </div>
+        </div>
+      )}
+      <button
+        className={`group w-60 m-2 btn disabled:animate-none bg-gradient-to-r from-[#9945FF] to-[#14F195] hover:from-pink-500 hover:to-yellow-500 ... `}
+        onClick={() => router.push("/")}
+      >
+        Create a token
+      </button>
+    </div>
+  );
+}

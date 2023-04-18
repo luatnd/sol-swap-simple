@@ -10,12 +10,10 @@ import BigNumber from "bignumber.js";
 import {fetchPrevMintToken, solToken} from "./service/token";
 import useMyBalances from "./service/useMyBalances";
 import {useRouter} from "next/router";
-import {checkLpExistMemo, fetchExistLp} from "./service/SwapService";
-import {LpNotExist} from "./InitSwapForm";
 
 
 type Props = {}
-export default function SwapForm(props: Props) {
+export default function AddLpForm(props: Props) {
   const router = useRouter();
   const wallet = useAnchorWallet();
   const { connection } = useConnection();
@@ -35,8 +33,6 @@ export default function SwapForm(props: Props) {
   const [symbolFrom, setSymbolFrom] = useState<string>(solToken.symbol);
   const [symbolTo, setSymbolTo] = useState<string>(myToken.symbol);
   const [rate, setRate] = useState<string>(RATE_SOL_TO_TOKEN_HARD_CODED.toString());
-  const [existLpAddress, setExistLpAddress] = useState<string>("");
-
 
   // computed
   useEffect(() => {
@@ -62,15 +58,6 @@ export default function SwapForm(props: Props) {
       setSymbolTo(solToken.symbol);
     }
   }, [symbolFrom, setSymbolTo]);
-
-  useEffect(() => {
-    checkLpExistMemo(myToken.address, {
-      wallet: wallet as anchor.Wallet,
-      connection
-    }).then(addr => {
-      setExistLpAddress(addr);
-    })
-  }, [])
 
 
   const swapSymbol = useCallback(() => {
@@ -101,13 +88,6 @@ export default function SwapForm(props: Props) {
         </button>
       </div>
     );
-  }
-
-  // LP SOL-PrevMintedMyToken exist then
-  if (!existLpAddress) {
-    return loading
-      ? <LpNotExist myToken={myToken} />
-      : <p className="mt-10">Checking exist LP...</p>
   }
 
   return (

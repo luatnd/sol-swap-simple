@@ -1,7 +1,7 @@
 import {NATIVE_MINT, NATIVE_MINT_2022} from "@solana/spl-token"
 import * as anchor from "@project-serum/anchor";
 
-type MyToken = {
+export type MyToken = {
   symbol: string,
   address: undefined | anchor.web3.PublicKey,
   name?: string,

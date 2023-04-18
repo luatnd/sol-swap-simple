@@ -3,9 +3,16 @@ import Head from "next/head";
 import SwapForm from "../views/swap/SwapForm";
 import {useState} from "react";
 import InitSwapForm from "../views/swap/InitSwapForm";
+import {useRouter} from "next/router";
+import AddLpForm from "../views/swap/AddLpForm";
 
 const Home: NextPage = (props) => {
-  const [tab, setTab] = useState(0);
+  const router = useRouter();
+  let {tab} = router.query;
+  if (!tab) {
+    tab = 'swap';
+  }
+  const setTab = (i) => router.push("/swap?tab=" + i);
 
   return (
     <div>
@@ -24,12 +31,14 @@ const Home: NextPage = (props) => {
           </h1>
           <div className="text-center w-full max-w-sm">
             <div className="tabs">
-              <a className={`tab tab-lifted ${tab === 0 ? 'tab-active' : ''}`} onClick={() => setTab(0)}>Liquidity Pool</a>
-              <a className={`tab tab-lifted ${tab === 1 ? 'tab-active' : ''}`} onClick={() => setTab(1)}>Swap</a>
+              <a className={`tab tab-lifted ${tab === 'init' ? 'tab-active' : ''}`} onClick={() => setTab('init')}>Init Pool</a>
+              <a className={`tab tab-lifted ${tab === 'add' ? 'tab-active' : ''}`} onClick={() => setTab('add')}>Add Liquidity</a>
+              <a className={`tab tab-lifted ${tab === 'swap' ? 'tab-active' : ''}`} onClick={() => setTab('swap')}>Swap</a>
             </div>
             <div className="tab-content w-full max-w-sm">
-              {tab === 0 && <InitSwapForm />}
-              {tab === 1 && <SwapForm />}
+              {tab === 'init' && <InitSwapForm />}
+              {tab === 'add' && <AddLpForm />}
+              {tab === 'swap' && <SwapForm />}
             </div>
           </div>
         </div>

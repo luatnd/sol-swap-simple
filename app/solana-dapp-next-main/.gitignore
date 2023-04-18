@@ -3,6 +3,9 @@
 # anchor build type
 /anchor/*
 !/anchor/README.md
+firebase.json
+.firebaserc
+firebase-debug.log
 
 # dependencies
 /node_modules
