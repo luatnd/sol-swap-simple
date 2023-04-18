@@ -3,6 +3,7 @@ import {assert} from "chai";
 import {SimpleLiquidityPool} from "../../../../../target/types/simple_liquidity_pool";
 import {getProgramConstant, getProgramIdlConstant} from "../../../../../tests/helpers/test-env";
 import {IDL as MoveTokenIdl} from "../../../../../target/types/move_token";
+import fs from "fs";
 
 export function getThisProgramConstants(program: Program<SimpleLiquidityPool>) {
   const LP_SEED_PREFIX = Buffer.from(JSON.parse(getProgramConstant("LP_SEED_PREFIX", program)), "utf8");
@@ -32,4 +33,30 @@ export function getThisProgramConstants(program: Program<SimpleLiquidityPool>) {
     LP_SWAP_FEE_PERMIL,
     TOKEN_DECIMAL,
   };
+}
+
+
+// contain some tmp generated stuff
+const TMP_DIR = "tests/tmp";
+type PrevLpPair = {
+  // baseTokenPubKey: string, // base is SOL
+  quoteTokenPubKey: string,
+};
+
+export function persistPrevLpPairToTmpData(content: PrevLpPair) {
+  try {
+    fs.mkdirSync(TMP_DIR, {recursive: true});
+  } catch (e) {
+  }
+  fs.writeFileSync(`${TMP_DIR}/lp_pair.json`, JSON.stringify(content, null, 2));
+}
+
+export function getPrevLpPairFromTmpData(): PrevLpPair {
+  let content;
+  try {
+    content = fs.readFileSync(`${TMP_DIR}/lp_pair.json`).toString();
+  } catch (e) {
+    content = `{}`
+  }
+  return JSON.parse(content);
 }

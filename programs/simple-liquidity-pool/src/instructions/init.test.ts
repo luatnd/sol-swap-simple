@@ -7,12 +7,12 @@ import {assert, expect} from "chai";
 import {NATIVE_MINT, NATIVE_MINT_2022} from "@solana/spl-token"
 import {getPrevMintTokenInfoFromTmpData} from "../../../move-token/src/instructions/create_token.test";
 import {airDropSolIfBalanceLowerThan} from "../../../../tests/helpers/token";
-import {getThisProgramConstants} from "./utils/utils.test";
+import {getPrevLpPairFromTmpData, getThisProgramConstants, persistPrevLpPairToTmpData} from "./utils/utils.test";
 
 
 export default function test__init(program: Program<SimpleLiquidityPool>) {
-  // NOTE: This test must run only once per liquidity pair, because init success only if pair was not exist
-  // TODO: Uncomment this to test init new LP, run only once
+  // NOTE: This test must run only once per liquidity pair,
+  // because init will success only if pair was not exist
   it("can init lp and can init only once", async () => test_init_lp_only_once(program));
   it("Other wallet cannot init same pair", async () => test_reinit_lp_by_other_wallet(program));
 }
@@ -30,6 +30,19 @@ async function test_init_lp_only_once(program: Program<SimpleLiquidityPool>) {
 
   // const tokenBasePubKey = NATIVE_MINT;  // Sol
   const prevMintToken = getPrevMintTokenInfoFromTmpData(); // This test must run after mint test; Test run async but mochajs test case will run once by one
+  const prevPair = getPrevLpPairFromTmpData();
+
+  /**
+   * Skip to test if pair is not new pair
+   * // because init will success only if pair was not exist
+   * This test must run only once per liquidity pair,
+   */
+  if (prevPair.quoteTokenPubKey == prevMintToken.mintKeypair.publicKey) {
+    console.log('{test_init_lp_only_once} SKIP because this LP pair have been already init');
+    return;
+  }
+
+
   const tokenQuotePubKey = new anchor.web3.PublicKey(prevMintToken.mintKeypair.publicKey)
   const {tx, liquidityPoolPubKey} = await init_new_lp(
     program,
@@ -38,6 +51,10 @@ async function test_init_lp_only_once(program: Program<SimpleLiquidityPool>) {
     wallet.payer,
   );
   assert(!!tx, "Tx should not be empty");
+  // Store tmp data
+  persistPrevLpPairToTmpData({
+    quoteTokenPubKey: tokenQuotePubKey.toString(),
+  })
 
   let tx2 = "";
   try {
