@@ -2,9 +2,11 @@ import {Program} from "@project-serum/anchor";
 import {SimpleLiquidityPool} from "../../../target/types/simple_liquidity_pool";
 import testProgram from "../../../tests/helpers/testProgram";
 import test__init from "./instructions/init.test";
+import test__add_liquidity from "./instructions/add_lp.test";
 
 const tests = [
   test__init,
+  test__add_liquidity,
   // test__fullFlow,
 ];
 testProgram<SimpleLiquidityPool>("SimpleLiquidityPool", tests)
