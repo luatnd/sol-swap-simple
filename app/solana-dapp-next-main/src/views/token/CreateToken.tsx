@@ -79,7 +79,12 @@ export default observer(function CreateToken(props: Props) {
           <b>initial supply</b> will be <input type="number" placeholder="1000" value={tokenSupply} onChange={(e) => TokenStore.set("tokenSupply", e.target.value)} required className="input input-bordered mr-2 w-36" /><br/>
 
           <br/>
-          NOTE: I skipped all the client side input validation
+          <p className="text-left">
+            <small>
+              - NOTE: I skipped all the client side input validation<br/>
+              - NOTE: Ensure name & symbol in metadata match your input
+            </small>
+          </p>
         </div>
 
         <TxSuccessMsg tx={tx}/>

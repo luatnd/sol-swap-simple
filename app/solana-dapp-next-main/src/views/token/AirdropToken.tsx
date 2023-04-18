@@ -81,22 +81,25 @@ export default function AirdropToken(props: Props) {
       <form onSubmit={(e) => { e.preventDefault(); submitForm(); }} >
         <div className="content-center">
           <div className="mt-6 mb-6 text-left leading-10">
-            <p className="leading-6">
-              <small>This is not kind of Faucet that anyone can use their wallet to claim your token. You will mint to their wallet.</small>
-            </p>
-
             1. What is <b>Token Mint Address</b> of the token you wanna airdrop?<br/>
             <input type="text" placeholder="" name="tma" value={tma} onChange={(e) => setTma(e.target.value)} required className="input input-bordered mr-2 w-full" /> <br/>
-            <small>Only airdrop the token you've mint</small>
+            <small className="text-gray-400">Warning: Only tokens minted with this app were supported!</small>
             <br/>
 
             2. You're going to airdrop (mint, not transfer)<br/>
-            <input type="number" placeholder="1000" name="amount" value={amount} onChange={(e) => setAmount(e.target.value)} required className="input input-bordered mr-2 w-28" /> <b>{!tokenDisplay.symbol ? 'tokens' : `${tokenDisplay.name} (${tokenDisplay.symbol})`}</b><br/>
+            <input type="number" placeholder="1000" name="amount" value={amount} onChange={(e) => setAmount(e.target.value)} required className="input input-bordered mr-2 w-28" /> <b>{!tokenDisplay.symbol ? 'tokens' : `${tokenDisplay.symbol} (${tokenDisplay.name})`}</b><br/>
             to the <b>recipient wallet</b> <input type="text" placeholder="" name="rec" value={recipient} onChange={(e) => setRecipient(e.target.value)} required className="input input-bordered mr-2 w-48" /><br/>
-            You will be the tx fee payer.
 
-            <br/>
-            NOTE: I skipped all the client side input validation
+            <ul className="leading-6">
+              <li><small>Anyone can airdrop the token minted with this app to any wallet</small></li>
+              <li><small>You will be the tx fee payer.</small></li>
+            </ul>
+
+            <p className="text-left">
+              <small>
+                NOTE: I skipped all the client side input validation<br/>
+              </small>
+            </p>
           </div>
         </div>
 

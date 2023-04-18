@@ -1,12 +1,8 @@
 import type { NextPage } from "next";
 import Head from "next/head";
-import { HomeView } from "../views";
-import {SignMessage} from "../components/SignMessage";
-import {SendTransaction} from "../components/SendTransaction";
 import {useState} from "react";
 import CreateToken from "../views/token/CreateToken";
 import AirdropToken from "../views/token/AirdropToken";
-import TransferToken from "../views/token/TransferToken";
 
 const Home: NextPage = (props) => {
   // new state.tab
@@ -31,12 +27,10 @@ const Home: NextPage = (props) => {
             <div className="tabs">
               <a className={`tab tab-lifted ${tab === 0 ? 'tab-active' : ''}`} onClick={() => setTab(0)}>Create token</a>
               <a className={`tab tab-lifted ${tab === 1 ? 'tab-active' : ''}`} onClick={() => setTab(1)}>Airdrop</a>
-              <a className={`tab tab-lifted ${tab === 2 ? 'tab-active' : ''}`} onClick={() => setTab(2)}>Transfer</a>
             </div>
             <div className="tab-content w-full max-w-sm">
               {tab === 0 && <CreateToken />}
               {tab === 1 && <AirdropToken />}
-              {tab === 2 && <TransferToken />}
             </div>
           </div>
         </div>
