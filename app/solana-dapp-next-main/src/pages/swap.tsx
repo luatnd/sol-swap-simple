@@ -1,15 +1,16 @@
 import type { NextPage } from "next";
 import Head from "next/head";
-import { HomeView } from "../views";
-import {SignMessage} from "../components/SignMessage";
-import {SendTransaction} from "../components/SendTransaction";
 import SwapForm from "../views/swap/SwapForm";
+import {useState} from "react";
+import InitSwapForm from "../views/swap/InitSwapForm";
 
 const Home: NextPage = (props) => {
+  const [tab, setTab] = useState(0);
+
   return (
     <div>
       <Head>
-        <title>Token</title>
+        <title>Token Swap</title>
         <meta
           name="description"
           content="Solana Scaffold"
@@ -22,9 +23,14 @@ const Home: NextPage = (props) => {
             Swap
           </h1>
           <div className="text-center w-full max-w-sm">
-
-            <SwapForm />
-
+            <div className="tabs">
+              <a className={`tab tab-lifted ${tab === 0 ? 'tab-active' : ''}`} onClick={() => setTab(0)}>Liquidity Pool</a>
+              <a className={`tab tab-lifted ${tab === 1 ? 'tab-active' : ''}`} onClick={() => setTab(1)}>Swap</a>
+            </div>
+            <div className="tab-content w-full max-w-sm">
+              {tab === 0 && <InitSwapForm />}
+              {tab === 1 && <SwapForm />}
+            </div>
           </div>
         </div>
       </div>

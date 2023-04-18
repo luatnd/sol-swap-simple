@@ -9,10 +9,13 @@ import TxSuccessMsg from "../../components/TxSuccessMsg";
 import BigNumber from "bignumber.js";
 import {fetchPrevMintToken, solToken} from "./service/token";
 import useMyBalances from "./service/useMyBalances";
+import {foo} from "./service/SwapService";
+import {useRouter} from "next/router";
 
 
 type Props = {}
 export default function SwapForm(props: Props) {
+  const router = useRouter();
   const wallet = useAnchorWallet();
   const { connection } = useConnection();
 
@@ -57,6 +60,14 @@ export default function SwapForm(props: Props) {
     }
   }, [symbolFrom, setSymbolTo]);
 
+
+  useEffect(() => {
+    foo("test", {
+      wallet: wallet as anchor.Wallet,
+      connection,
+    })
+  }, []);
+
   const swapSymbol = useCallback(() => {
     // new version of react: re-render only once
     setSymbolFrom(symbolTo);
@@ -72,6 +83,20 @@ export default function SwapForm(props: Props) {
 
   }, []);
 
+
+  if (!myToken.address) {
+    return (
+      <div className="InitSwapForm">
+        <p>This demo require a mint token, please mint it first on the Token page</p>
+        <button
+          className={`${loading ? 'loading animate-pulse' : ''} group w-60 m-2 btn disabled:animate-none bg-gradient-to-r from-[#9945FF] to-[#14F195] hover:from-pink-500 hover:to-yellow-500 ... `}
+          onClick={() => router.push("/")}
+        >
+          Create a token
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="SwapForm">
