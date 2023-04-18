@@ -103,6 +103,20 @@ impl FixedRateLP {
 
     Ok(())
   }
+
+  /// No logic yet because this lp is simple, but let it here to validate.
+  /// Or just remove this fn is oke
+  pub fn add_liquidity(&mut self, token_base_amount: u64, token_quote_amount: u64) -> Result<()> {
+    require_gte!(token_base_amount, 0, LpBaseError::InvalidAmount);
+    require_gte!(token_quote_amount, 0, LpBaseError::InvalidAmount);
+
+    // TODO: Validate current amount over upper range of u64
+
+    // self.amount_base += token_base_amount;
+    // self.amount_quote += token_quote_amount;
+
+    Ok(())
+  }
 }
 
 
