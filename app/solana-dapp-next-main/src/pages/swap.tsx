@@ -3,6 +3,7 @@ import Head from "next/head";
 import { HomeView } from "../views";
 import {SignMessage} from "../components/SignMessage";
 import {SendTransaction} from "../components/SendTransaction";
+import SwapForm from "../views/swap/SwapForm";
 
 const Home: NextPage = (props) => {
   return (
@@ -20,8 +21,10 @@ const Home: NextPage = (props) => {
           <h1 className="text-center text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-tr from-[#9945FF] to-[#14F195]">
             Swap
           </h1>
-          <div className="text-center">
-            content
+          <div className="text-center w-full max-w-sm">
+
+            <SwapForm />
+
           </div>
         </div>
       </div>

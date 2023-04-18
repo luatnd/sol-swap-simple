@@ -4,8 +4,10 @@ import {notify} from "../../../utils/notifications";
 import {IDL as MoveTokenIdl} from "../../../../anchor/types/move_token";
 import {AnchorBrowserClient} from "../../../utils/anchor-client-js/AnchorBrowserClient";
 
-// @ts-ignore
-window.tmp_anchor = anchor;
+if (typeof window !== 'undefined') {
+  // @ts-ignore
+  window.tmp_anchor = anchor;
+}
 
 export async function createNewToken(
   tokenName: string,
@@ -19,8 +21,9 @@ export async function createNewToken(
   },
 ) {
   // validate metadata
+  let metadata;
   try {
-    const metadata = await fetch(metadataUri).then((res) => res.json());
+    metadata = await fetch(metadataUri).then((res) => res.json());
     if (!metadata) {
       notify({type: 'error', message: `Cannot fetch metadata from uri: ${metadataUri}`});
       return;
@@ -116,7 +119,11 @@ export async function createNewToken(
     return;
   }
 
-  return signature;
+  return {
+    tx: signature,
+    metadata: metadata,
+    tma: mintKeypair.publicKey.toBase58(),
+  };
 }
 
 

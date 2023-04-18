@@ -1,4 +1,5 @@
 import * as anchor from "@project-serum/anchor";
+import {TokenAmount} from "@solana/web3.js";
 
 export class AnchorBrowserClient {
   static getProvider(connection: anchor.web3.Connection, wallet: anchor.Wallet, opts?: anchor.web3.ConfirmOptions) {
@@ -82,4 +83,23 @@ export class AnchorBrowserClient {
   //
   //   return program.account.metadata.fetch(metadata);
   // }
+
+  static async getSqlTokenBalanceOf(
+    connection: anchor.web3.Connection,
+    owner: anchor.web3.PublicKey,
+    tokenMintAddress: anchor.web3.PublicKey
+  ): Promise<TokenAmount> {
+    console.log('{getSqlTokenBalanceOf}: ', {owner, tma: tokenMintAddress});
+    // ata stands for Associated Token Address
+    const ata = await anchor.utils.token.associatedAddress({
+      mint: tokenMintAddress,
+      owner: owner,
+    });
+    const res = await connection.getTokenAccountBalance(ata);
+    return res.value;
+  }
+
+  static async getSolBalanceOf(connection: anchor.web3.Connection, owner: anchor.web3.PublicKey) {
+    return connection.getBalance(owner);
+  }
 }

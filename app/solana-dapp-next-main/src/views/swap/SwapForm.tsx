@@ -1,0 +1,182 @@
+import {useAnchorWallet, useConnection, useWallet} from "@solana/wallet-adapter-react";
+import TokenStore from "../token/service/TokenStore";
+import {useCallback, useEffect, useMemo, useState} from "react";
+import {notify} from "../../utils/notifications";
+import {AnchorBrowserClient} from "../../utils/anchor-client-js/AnchorBrowserClient";
+import {airdropToken, createNewToken} from "../token/service/TokenService";
+import * as anchor from "@project-serum/anchor";
+import TxSuccessMsg from "../../components/TxSuccessMsg";
+import BigNumber from "bignumber.js";
+import {fetchPrevMintToken, solToken} from "./service/token";
+import useMyBalances from "./service/useMyBalances";
+
+
+type Props = {}
+export default function SwapForm(props: Props) {
+  const wallet = useAnchorWallet();
+  const { connection } = useConnection();
+
+  const RATE_SOL_TO_TOKEN_HARD_CODED = 10;
+  const myToken = fetchPrevMintToken();
+  const tokenAddresses = useMemo(() => {
+    return [solToken.address, myToken.address];
+  }, [solToken.address, myToken.address])
+  // change this to re-fetch all the balances
+  const [refreshBalanceNonce, setRefreshBalanceNonce] = useState(0);
+  const [mySolBalance, myTokenBalance] = useMyBalances(tokenAddresses, refreshBalanceNonce);
+
+  // form data
+  const [amountFrom, setAmountFrom] = useState<string>("");
+  const [amountTo, setAmountTo] = useState<string>("");
+  const [symbolFrom, setSymbolFrom] = useState<string>(solToken.symbol);
+  const [symbolTo, setSymbolTo] = useState<string>(myToken.symbol);
+  const [rate, setRate] = useState<string>(RATE_SOL_TO_TOKEN_HARD_CODED.toString());
+
+  // computed
+  useEffect(() => {
+    // don't parse float here, because we need to keep the precision
+    if (amountFrom.charAt(amountFrom.length - 1) === '.') {
+      return;
+    }
+
+    const a = new BigNumber(!!amountFrom ? amountFrom : 0);
+    const rateA2B = symbolFrom === solToken.symbol
+      ? RATE_SOL_TO_TOKEN_HARD_CODED
+      : 1 / RATE_SOL_TO_TOKEN_HARD_CODED
+    ;
+    setRate(rateA2B.toString());
+    setAmountTo(a.multipliedBy(rateA2B).toString());
+  }, [amountFrom, symbolFrom]);
+
+  // computed
+  useEffect(() => {
+    if (symbolFrom === solToken.symbol) {
+      setSymbolTo(myToken.symbol);
+    } else {
+      setSymbolTo(solToken.symbol);
+    }
+  }, [symbolFrom, setSymbolTo]);
+
+  const swapSymbol = useCallback(() => {
+    // new version of react: re-render only once
+    setSymbolFrom(symbolTo);
+    setAmountFrom(amountTo);
+  }, [setSymbolFrom, setAmountFrom, symbolTo, amountTo]);
+
+
+
+
+  const [tx, setTx] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const submitForm = useCallback(() => {
+
+  }, []);
+
+
+  return (
+    <div className="SwapForm">
+      <form onSubmit={(e) => { e.preventDefault(); submitForm(); }} >
+        <div className="content-center">
+          <div className="mt-6 mb-6 text-left leading-10">
+
+            <div className="flex flex-row items-center">
+              <div className="basis-10/12">
+
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">You're going to swap</span>
+                  </label>
+                  <label className="input-group">
+                    <input
+                      type="number" placeholder="0" required
+                      name="amountFrom" value={amountFrom} onChange={(e) => setAmountFrom(e.target.value)}
+                      className="input input-bordered"
+                    />
+                    <span>{symbolFrom}</span>
+                  </label>
+                </div>
+
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">To get</span>
+                  </label>
+                  <label className="input-group">
+                    <input
+                      type="number" placeholder="" required
+                      name="amountFrom" value={amountTo} disabled
+                      className="input input-bordered"
+                    />
+                    <span>{symbolTo}</span>
+                  </label>
+                </div>
+
+              </div>
+              <div className="basis-2/12">
+                <button onClick={swapSymbol} className="btn btn-circle btn-outline" style={{
+                  width: 60,
+                  height: 60,
+                  marginTop: 40,
+                  marginLeft: 20,
+                  padding: 10,
+                }}>
+                  <svg style={{
+                    height: '100%',
+                  }}>
+                    <use href="/swap-vertical-svgrepo-com.svg#my"></use>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text">With price</span>
+              </label>
+              <label className="input-group">
+                <span>1 {symbolFrom}</span>
+                <span>= {rate} {symbolTo}</span>
+              </label>
+            </div>
+
+            <div className="form-control mt-6">
+              <label className="label">
+                <span className="label-text">Your balance:</span>
+              </label>
+              <label className="input">
+                <p><b>{mySolBalance}</b> {solToken.symbol}</p>
+                <p><b>{myTokenBalance}</b> {myToken.symbol}</p>
+              </label>
+            </div>
+
+          </div>
+        </div>
+
+        <TxSuccessMsg tx={tx}/>
+
+        {!myToken.address && (
+          <div className="alert alert-warning shadow-lg">
+            <div>
+              <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+              <span>&nbsp;No minted token found. Please mint your token first so you can swap it here.</span>
+            </div>
+          </div>
+        )}
+        <button
+          type="submit"
+          className={`${loading ? 'loading animate-pulse' : ''} group w-60 m-2 btn disabled:animate-none bg-gradient-to-r from-[#9945FF] to-[#14F195] hover:from-pink-500 hover:to-yellow-500 ... `}
+          disabled={!(wallet && wallet.publicKey) || !myToken.address}
+        >
+          <div className="hidden group-disabled:block ">
+            {!(wallet && wallet.publicKey)
+              ? 'Wallet not connected'
+              : 'Cannot swap'
+            }
+          </div>
+          <div className="block group-disabled:hidden">
+            Swap
+          </div>
+        </button>
+      </form>
+    </div>
+  );
+};
