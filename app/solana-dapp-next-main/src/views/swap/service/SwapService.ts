@@ -6,9 +6,8 @@ import {Program} from "@project-serum/anchor";
 import {getProgramConstant, getProgramIdlConstant} from "../../../utils/anchor-client-js/utils";
 import BigNumber from "bignumber.js";
 import {notify} from "../../../utils/notifications";
-import {PublicKey} from "@solana/web3.js";
-import {getCurrentProvider, getProviderWallet} from "../../../../../../tests/helpers/test-env";
-import {getPrevMintTokenInfoFromTmpData} from "../../../../../../programs/move-token/src/instructions/create_token.test";
+import {Keypair, PublicKey} from "@solana/web3.js";
+import {NATIVE_MINT} from "@solana/spl-token";
 
 const VERBOSE = true;
 const SIMPLE_LP_PROGRAM_ID = "GMDA6SqHUFzctniBczeBSsoLEfd3HaW161wwyAms2buL";
@@ -46,7 +45,10 @@ export async function addLiquidity(
     wallet: anchor.Wallet,
     connection: anchor.web3.Connection,
   },
-): Promise<{quote: number, base: number}> {
+): Promise<{
+  tx: string,
+  lpBalances: {quote: number, base: number}
+}> {
   const {wallet, connection} = data;
   const provider = AnchorBrowserClient.getProvider(connection, wallet);
   const program = new anchor.Program(LpIdl, SIMPLE_LP_PROGRAM_ID, provider)
@@ -58,6 +60,31 @@ export async function addLiquidity(
       solAmount: baseAmount ? parseFloat(baseAmount) : 0,
       tokenAmount: quoteAmount ? parseFloat(quoteAmount) : 0,
     },
+    {wallet, connection, provider},
+  )
+}
+
+export async function swap(
+  from: PublicKey,
+  to: PublicKey,
+  amountFrom: string,
+  data: {
+    wallet: anchor.Wallet,
+    connection: anchor.web3.Connection,
+  },
+): Promise<{
+  tx: string,
+  lpBalances: {quote: number, base: number}
+}> {
+  const {wallet, connection} = data;
+  const provider = AnchorBrowserClient.getProvider(connection, wallet);
+  const program = new anchor.Program(LpIdl, SIMPLE_LP_PROGRAM_ID, provider)
+
+  return swap_token(
+    program,
+    from,
+    to,
+    amountFrom ? parseFloat(amountFrom) : 0,
     {wallet, connection, provider},
   )
 }
@@ -134,18 +161,6 @@ async function init_new_lp(
     tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
     associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
   });
-
-
-  // validate account exist:
-  // const a = await program.account.fixedRateLp.all();
-  // console.log('{init_new_lp} a: ', a);
-  // program.account.fixedRateLp.fetch(lpPubKey.toString()).then(r => {
-  //   console.log('{r} r: ', r);
-  // }).catch(e => {
-  //   console.log('{e} e: ', e);
-  // });
-  // TODO: HERE: CHeck if acocunt already exsit s
-
 
   const fixedRate = new BigNumber(rate).toNumber();
   const tx = await program.methods.initialize(fixedRate * Math.pow(10, LP_RATE_DECIMAL))
@@ -276,10 +291,150 @@ async function add_liquidity_to_exist_lp(
   lpBalances.after.quote = new anchor.BN((await provider.connection.getTokenAccountBalance(lpLiquidityQuoteAta)).value.amount).toNumber();
 
   return {
-    base: lpBalances.after.base / 1e9,
-    quote: lpBalances.after.quote / Math.pow(10, TOKEN_DECIMAL),
+    tx,
+    lpBalances: {
+      base: lpBalances.after.base / 1e9,
+      quote: lpBalances.after.quote / Math.pow(10, TOKEN_DECIMAL),
+    }
   };
 }
+
+/**
+ * Copied from programs/simple-liquidity-pool/src/instructions/swap.test.ts
+ * with some mod
+ */
+async function swap_token(
+  program: Program<SimpleLiquidityPool>,
+  fromPubKey: PublicKey,
+  toPubKey: PublicKey,
+  fromAmount: number,
+  data: {
+    wallet: anchor.Wallet,
+    connection: anchor.web3.Connection,
+    provider: anchor.Provider,
+  }
+) {
+  console.log('{swap_token} : ', {
+    fromPubKey,
+    toPubKey,
+    fromAmount,
+  });
+  const {wallet, connection, provider} = data;
+  const showException = true;
+
+  const swappingBaseToQuote = fromPubKey.equals(NATIVE_MINT);
+  const [basePubKey, quotePubKey] = swappingBaseToQuote
+    ? [fromPubKey, toPubKey]
+    : [toPubKey, fromPubKey];
+
+  const {
+    LP_SEED_PREFIX,
+    LP_LIQUIDITY_PREFIX,
+    LP_FEE_SEED_PREFIX,
+    LP_RATE_DECIMAL,
+    LP_SWAP_FEE_PERMIL,
+    TOKEN_DECIMAL,
+  } = getThisProgramConstants(program);
+
+  const NATIVE_SOL_DECIMAL = 9;
+  const fromDecimals = swappingBaseToQuote ? NATIVE_SOL_DECIMAL : TOKEN_DECIMAL;
+  // const toDecimals = fromPubKey.equals(NATIVE_MINT) ? TOKEN_DECIMAL: NATIVE_SOL_DECIMAL;
+
+  const [lpPubKey] = (anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      LP_SEED_PREFIX,
+      quotePubKey.toBuffer(),
+    ],
+    program.programId
+  ))
+  const [lpFeePubKey] = (anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      LP_FEE_SEED_PREFIX,
+      quotePubKey.toBuffer(),
+    ],
+    program.programId
+  ))
+  const [lpLiquidityPubKey] = (anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      LP_LIQUIDITY_PREFIX,
+      quotePubKey.toBuffer(),
+    ],
+    program.programId
+  ))
+
+  const lpLiquidityQuoteAta = await anchor.utils.token.associatedAddress({
+    mint: quotePubKey,
+    owner: lpLiquidityPubKey,
+  });
+  const feeAta = await anchor.utils.token.associatedAddress({
+    mint: quotePubKey,
+    owner: lpFeePubKey
+  });
+  const userQuoteAta = await anchor.utils.token.associatedAddress({
+    mint: quotePubKey,
+    owner: wallet.publicKey
+  });
+
+  const lpBalances = {
+    before: {quote: 0, base: 0},
+    after: {quote: 0, base: 0},
+  }
+  const lpFeeBalances = {
+    before: {quote: 0, base: 0},
+    after: {quote: 0, base: 0},
+  }
+
+  VERBOSE && console.log('{swap_token} : ', {
+    lpPubKey: lpPubKey.toString(),
+    lpLiquidityPubKey: lpLiquidityPubKey.toString(),
+    lpFeePubKey: lpFeePubKey.toString(),
+    feeAta: feeAta.toString(),
+    lpLiquidityQuoteAta: lpLiquidityQuoteAta.toString(),
+    lpBalances,
+    lpFeeBalances,
+    fromAmountBN: fromAmount * Math.pow(10, fromDecimals),
+  });
+
+  const tx = await program.methods.swap(
+    fromPubKey,
+    toPubKey,
+    new anchor.BN(fromAmount * Math.pow(10, fromDecimals)),
+  )
+    .accounts({
+      lp: lpPubKey,
+      tokenQuote: quotePubKey,
+      lpLiquidity: lpLiquidityPubKey,
+      lpLiquidityQuoteAta: lpLiquidityQuoteAta,
+      lpFee: lpFeePubKey,
+      lpFeeQuoteAta: feeAta,
+      userQuoteAta: userQuoteAta,
+      user: wallet.publicKey,
+      systemProgram: anchor.web3.SystemProgram.programId,
+      tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+      associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
+    })
+    .signers([])
+    .rpc()
+    .catch(e => {
+      VERBOSE && showException && console.log('Error: ', e); // show on-chain logs
+      throw e;
+    });
+  VERBOSE && console.log('{test__swap_token} tx: ', tx);
+
+  lpBalances.after.base = await provider.connection.getBalance(lpLiquidityPubKey);
+  lpBalances.after.quote = new anchor.BN((await provider.connection.getTokenAccountBalance(lpLiquidityQuoteAta)).value.amount).toNumber();
+
+  console.log('{swap_token} lpBalances: ', lpBalances);
+
+  return {
+    tx,
+    lpBalances: {
+      base: lpBalances.after.base / 1e9,
+      quote: lpBalances.after.quote / Math.pow(10, TOKEN_DECIMAL),
+    },
+  };
+}
+
 
 export async function getLpBalances(
   quote: PublicKey,
@@ -309,8 +464,21 @@ export async function getLpBalances(
     owner: lpLiquidityPubKey,
   });
 
-  const lpBalances_after_base = await provider.connection.getBalance(lpLiquidityPubKey);
-  const lpBalances_after_quote = new anchor.BN((await provider.connection.getTokenAccountBalance(lpLiquidityQuoteAta)).value.amount).toNumber();
+  let lpBalances_after_base = 0;
+  let lpBalances_after_quote = 0;
+  try {
+    lpBalances_after_base = await provider.connection.getBalance(lpLiquidityPubKey)
+  } catch (e) {
+    console.log('{getLpBalances} base e: ', e);
+  }
+  try {
+    lpBalances_after_quote = new anchor.BN((await provider.connection.getTokenAccountBalance(lpLiquidityQuoteAta)).value.amount).toNumber();
+  } catch (e) {
+    console.log('{getLpBalances} quote e: ', e);
+  }
+
+  console.log('{getLpBalances} : ', lpBalances_after_base, lpBalances_after_quote);
+
   return {
     base: lpBalances_after_base / 1e9,
     quote: lpBalances_after_quote / Math.pow(10, TOKEN_DECIMAL),
@@ -375,7 +543,6 @@ export async function fetchExistLp(quote: PublicKey, data: {
     [LP_SEED_PREFIX, quote.toBuffer()],
     program.programId
   ))
-  console.log('{fetchExistLp} check if this lpPubKey exist: ', lpPubKey.toString());
   try {
     /**
      * NOT WORKING in browser - still investigating
@@ -390,6 +557,7 @@ export async function fetchExistLp(quote: PublicKey, data: {
     if (!!a) {
       // have account
       if (a.lamports && a.owner.equals(program.programId)) {
+        console.log('{fetchExistLp} lpPubKey exist: ', lpPubKey.toString());
         return lpPubKey.toString();
       }
     }
@@ -397,6 +565,7 @@ export async function fetchExistLp(quote: PublicKey, data: {
     console.warn('{fetchExistLp} e: ', e);
   }
 
+  console.log('{fetchExistLp} lpPubKey NOT exist: ', lpPubKey.toString());
   return ""
 }
 

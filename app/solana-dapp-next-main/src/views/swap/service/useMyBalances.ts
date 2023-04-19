@@ -4,15 +4,29 @@ import {useAnchorWallet, useConnection} from "@solana/wallet-adapter-react";
 import * as anchor from "@project-serum/anchor";
 import {NATIVE_MINT, NATIVE_MINT_2022} from "@solana/spl-token"
 import {LAMPORTS_PER_SOL} from "@solana/web3.js";
+import SwapStore from "./SwapStore";
 
 export default function useMyBalances(tokenMintAddresses: anchor.web3.PublicKey[], refreshBalanceNonce: number) {
-  const [balances, setBalances] = useState<number[]>([0, 0]);
   const {connection} = useConnection();
   const wallet = useAnchorWallet();
+
+  // const [balances, setBalances] = useState<number[]>([0, 0]);
+  const setBalances = ([base, quote]: number[]) => {
+    // @ts-ignore
+    SwapStore.setState({
+      userBalanceBase: base,
+      userBalanceQuote: quote,
+    });
+  }
 
   useEffect(() => {
     if (!(wallet && wallet.publicKey)) {
       setBalances(tokenMintAddresses.map(() => 0));
+      return;
+    }
+
+    // only fetch if LP exist
+    if (!SwapStore.lpAddr) {
       return;
     }
 
@@ -44,7 +58,10 @@ export default function useMyBalances(tokenMintAddresses: anchor.web3.PublicKey[
       }
     }))
     Promise.all(fetchBalances).then((balances) => setBalances(balances));
-  }, [tokenMintAddresses, refreshBalanceNonce, setBalances, wallet]);
+  }, [tokenMintAddresses, refreshBalanceNonce, wallet, SwapStore.lpAddr]);
 
-  return balances;
+  return [
+    SwapStore.userBalanceBase,
+    SwapStore.userBalanceQuote,
+  ];
 }

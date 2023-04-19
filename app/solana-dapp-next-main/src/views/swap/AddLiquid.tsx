@@ -12,10 +12,13 @@ import useMyBalances from "./service/useMyBalances";
 import {useRouter} from "next/router";
 import {addLiquidity, checkLpExistMemo, getLpBalances, initLp} from "./service/SwapService";
 import {NATIVE_MINT} from "@solana/spl-token";
+import {LpNotExist} from "./InitSwapForm";
+import SwapStore from "./service/SwapStore";
+import {observer} from "mobx-react-lite";
 
 
 type Props = {}
-export default function AddLiquid(props: Props) {
+export default observer(function AddLiquid(props: Props) {
   const router = useRouter();
   const wallet = useAnchorWallet();
   const { connection } = useConnection();
@@ -34,7 +37,10 @@ export default function AddLiquid(props: Props) {
   const [symbolFrom, setSymbolFrom] = useState<string>(solToken.symbol);
   const [symbolTo, setSymbolTo] = useState<string>(myToken.symbol);
 
-  const [existLpAddress, setExistLpAddress] = useState<string>("");
+  const [existLpAddress, setExistLpAddress] = [
+    SwapStore.lpAddr,
+    (v) => SwapStore.set("lpAddr", v),
+  ];
   useEffect(() => {
     checkLpExistMemo(myToken.address, {
       wallet: wallet as anchor.Wallet,
@@ -44,15 +50,24 @@ export default function AddLiquid(props: Props) {
     })
   }, [])
 
-  const [lpBalance, setLpBalance] = useState<{base: number, quote: number}>({base: 0, quote: 0});
+  const lpBalance = SwapStore.lpBalance;
   useEffect(() => {
+    // only fetch if LP exist
+    if (!existLpAddress) {
+      return;
+    }
+
     getLpBalances(myToken.address, {
       wallet: wallet as anchor.Wallet,
       connection
     }).then(res => {
-      setLpBalance(res);
+      // @ts-ignore
+      SwapStore.setState({
+        lpBalanceBase: res.base,
+        lpBalanceQuote: res.quote,
+      });
     })
-  }, [])
+  }, [existLpAddress])
 
 
   const [tx, setTx] = useState<string>("");
@@ -74,7 +89,7 @@ export default function AddLiquid(props: Props) {
         wallet: wallet as anchor.Wallet,
         connection,
       }
-    ).then(({base, quote}) => {
+    ).then(({tx, lpBalances}) => {
       // success
       setTx(tx);
       // hide alert box after 20s
@@ -83,7 +98,11 @@ export default function AddLiquid(props: Props) {
       }, 60000)
 
       // update balances
-      setLpBalance({base, quote});
+      // @ts-ignore
+      SwapStore.setState({
+        lpBalanceBase: lpBalances.base,
+        lpBalanceQuote: lpBalances.quote,
+      });
       setRefreshBalanceNonce(refreshBalanceNonce + 1);
     }).catch(e => {
       console.error('{initLp} e: ', e);
@@ -91,7 +110,7 @@ export default function AddLiquid(props: Props) {
     }).finally(() => {
       setLoading(false);
     })
-  }, [amountFrom, amountTo, myToken.address, wallet, connection, refreshBalanceNonce, setLpBalance ]);
+  }, [amountFrom, amountTo, myToken.address, wallet, connection, refreshBalanceNonce ]);
 
 
   if (!myToken.address) {
@@ -106,6 +125,11 @@ export default function AddLiquid(props: Props) {
         </button>
       </div>
     );
+  }
+
+  // LP SOL-PrevMintedMyToken exist then
+  if (!existLpAddress) {
+    return <LpNotExist myToken={myToken} />
   }
 
   return (
@@ -192,4 +216,4 @@ export default function AddLiquid(props: Props) {
       </form>
     </div>
   );
-};
+});

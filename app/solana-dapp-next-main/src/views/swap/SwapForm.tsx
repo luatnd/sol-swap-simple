@@ -10,12 +10,14 @@ import BigNumber from "bignumber.js";
 import {fetchPrevMintToken, solToken} from "./service/token";
 import useMyBalances from "./service/useMyBalances";
 import {useRouter} from "next/router";
-import {checkLpExistMemo, fetchExistLp} from "./service/SwapService";
+import {swap, checkLpExistMemo, getLpBalances} from "./service/SwapService";
 import {LpNotExist} from "./InitSwapForm";
+import SwapStore from "./service/SwapStore";
+import {observer} from "mobx-react-lite";
 
 
 type Props = {}
-export default function SwapForm(props: Props) {
+export default observer(function SwapForm(props: Props) {
   const router = useRouter();
   const wallet = useAnchorWallet();
   const { connection } = useConnection();
@@ -35,7 +37,6 @@ export default function SwapForm(props: Props) {
   const [symbolFrom, setSymbolFrom] = useState<string>(solToken.symbol);
   const [symbolTo, setSymbolTo] = useState<string>(myToken.symbol);
   const [rate, setRate] = useState<string>(RATE_SOL_TO_TOKEN_HARD_CODED.toString());
-  const [existLpAddress, setExistLpAddress] = useState<string>("");
 
 
   // computed
@@ -63,6 +64,10 @@ export default function SwapForm(props: Props) {
     }
   }, [symbolFrom, setSymbolTo]);
 
+  const [existLpAddress, setExistLpAddress] = [
+    SwapStore.lpAddr,
+    (v) => SwapStore.set("lpAddr", v),
+  ];
   useEffect(() => {
     checkLpExistMemo(myToken.address, {
       wallet: wallet as anchor.Wallet,
@@ -71,6 +76,24 @@ export default function SwapForm(props: Props) {
       setExistLpAddress(addr);
     })
   }, [])
+
+  const lpBalance = SwapStore.lpBalance;
+  useEffect(() => {
+    // only fetch if LP exist
+    if (!SwapStore.lpAddr) {
+      return;
+    }
+    getLpBalances(myToken.address, {
+      wallet: wallet as anchor.Wallet,
+      connection
+    }).then(res => {
+      // @ts-ignore
+      SwapStore.setState({
+        lpBalanceBase: res.base,
+        lpBalanceQuote: res.quote,
+      });
+    })
+  }, [existLpAddress])
 
 
   const swapSymbol = useCallback(() => {
@@ -85,8 +108,52 @@ export default function SwapForm(props: Props) {
   const [tx, setTx] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const submitForm = useCallback(() => {
+    // support devnet only
+    if (!AnchorBrowserClient.isDevNet(connection)) {
+      // throw new Error("devnet is required")
+      notify({type: "error", message: "Devnet is required"});
+      return;
+    }
 
-  }, []);
+    console.log('{amountFrom} amountFrom: ', amountFrom);
+
+    const b2q = symbolFrom === solToken.symbol;
+    setLoading(true);
+    swap(
+      (b2q ? solToken : myToken).address,
+      (b2q ? myToken : solToken).address,
+      amountFrom,
+      {
+        wallet: wallet as anchor.Wallet,
+        connection,
+      }
+    ).then(({tx, lpBalances}) => {
+      // success
+      setTx(tx);
+      // hide alert box after 20s
+      setTimeout(() => {
+        setTx("");
+      }, 60000)
+
+      // update balances
+      // @ts-ignore
+      SwapStore.setState({
+        lpBalanceBase: lpBalances.base,
+        lpBalanceQuote: lpBalances.quote,
+      });
+      setRefreshBalanceNonce(refreshBalanceNonce + 1);
+    }).catch(e => {
+      console.error('{swap} e: ', e);
+      notify({type: "error", message: e.message, txid: tx});
+    }).finally(() => {
+      setLoading(false);
+    })
+  }, [
+    amountFrom, symbolFrom,
+    wallet, connection,
+    myToken.address,
+    refreshBalanceNonce,
+  ]);
 
 
   if (!myToken.address) {
@@ -105,9 +172,7 @@ export default function SwapForm(props: Props) {
 
   // LP SOL-PrevMintedMyToken exist then
   if (!existLpAddress) {
-    return loading
-      ? <LpNotExist myToken={myToken} />
-      : <p className="mt-10">Checking exist LP...</p>
+    return <LpNotExist myToken={myToken} />
   }
 
   return (
@@ -149,7 +214,7 @@ export default function SwapForm(props: Props) {
 
               </div>
               <div className="basis-2/12">
-                <button onClick={swapSymbol} className="btn btn-circle btn-outline" style={{
+                <button type="button" onClick={swapSymbol} className="btn btn-circle btn-outline" style={{
                   width: 60,
                   height: 60,
                   marginTop: 40,
@@ -185,8 +250,20 @@ export default function SwapForm(props: Props) {
               </label>
             </div>
 
+            <div className="form-control mt-6">
+              <label className="label">
+                <span className="label-text">LP balance:</span>
+              </label>
+              <label className="input">
+                <p><b>{lpBalance.base}</b> {solToken.symbol}</p>
+                <p><b>{lpBalance.quote}</b> {myToken.symbol}</p>
+              </label>
+            </div>
+
           </div>
         </div>
+
+        <p className="text-gray-500">NOTE: All client-side validation was skipped, plz see error in dev console</p>
 
         <TxSuccessMsg tx={tx}/>
 
@@ -216,4 +293,4 @@ export default function SwapForm(props: Props) {
       </form>
     </div>
   );
-};
+});

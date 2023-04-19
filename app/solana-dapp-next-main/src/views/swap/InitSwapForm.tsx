@@ -12,6 +12,7 @@ import {checkLpExistMemo, fetchExistLp, initLp} from "./service/SwapService";
 import {useRouter} from "next/router";
 import {NATIVE_MINT} from "@solana/spl-token";
 import {TokenNotExist} from "../token/CreateToken";
+import SwapStore from "./service/SwapStore";
 
 
 type Props = {}
@@ -21,12 +22,16 @@ export default function InitSwapForm(props: Props) {
   const { connection } = useConnection();
 
   const myToken = fetchPrevMintToken();
+  const RATE_SOL_TO_TOKEN_HARD_CODED = 10;
 
-  const [rate, setRate] = useState<string>("1");
+  const [rate, setRate] = useState<string>(RATE_SOL_TO_TOKEN_HARD_CODED.toString());
   const [tx, setTx] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
-  const [existLpAddress, setExistLpAddress] = useState<string>("");
 
+  const [existLpAddress, setExistLpAddress] = [
+    SwapStore.lpAddr,
+    (v) => SwapStore.set("lpAddr", v),
+  ];
   useEffect(() => {
     checkLpExistMemo(myToken.address, {
       wallet: wallet as anchor.Wallet,
@@ -108,7 +113,7 @@ export default function InitSwapForm(props: Props) {
                 <div className="mt-4">
                   <span className="label-text">With a <b>fixed price rate</b></span>
                   <input
-                    type="number" placeholder="1" required
+                    type="number" placeholder="1" required disabled
                     name="amountFrom" value={rate} onChange={(e) => setRate(e.target.value)}
                     className="input input-bordered max-w-xs ml-6 w-36"
                   />
