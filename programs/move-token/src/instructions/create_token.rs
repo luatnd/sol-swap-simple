@@ -27,6 +27,13 @@ pub fn create_token(
 ) -> Result<()> {
   msg!("[move_token.create_token] Metadata account address: {}", &ctx.accounts.metadata_account.key());
 
+  mint_to_payer_wallet(
+    &ctx,
+    initial_supply,
+    mint_authority_pda_bump,
+  )?;
+  msg!("[move_token.create_token] Mint Supply Done");
+
   // let metadata_account = ctx.accounts.metadata_account.to_account_info();
   // msg!("[move_token.create_token] Metadata account: {:?}", metadata_account);
   // let token_metadata_program = &ctx.accounts.token_metadata_program;
@@ -58,6 +65,7 @@ pub fn create_token(
     ctx.accounts.mint_authority.to_account_info(),   // Mint Authority
     ctx.accounts.payer.to_account_info(),   // payer
     ctx.accounts.mint_authority.to_account_info(),   // Update Authority
+    ctx.accounts.system_program.to_account_info(),
     ctx.accounts.rent.to_account_info(),
   ];
 
@@ -72,26 +80,19 @@ pub fn create_token(
 
   msg!("[move_token.create_token] Init Done");
 
-  mint_to_payer_wallet(
-    ctx,
-    initial_supply,
-    mint_authority_pda_bump,
-  )?;
-  msg!("[move_token.create_token] Mint Supply Done");
-
   Ok(())
 }
 
 // private function
 fn mint_to_payer_wallet(
-  ctx: Context<CreateTokenMint>,
+  ctx: &Context<CreateTokenMint>,
   initial_supply: u64, // amount in lamport units, not in token
   mint_authority_pda_bump: u8,
 ) -> Result<()> {
   //
   // Mint initial supply to payer wallet right after init
   //
-  msg!("Token Address: {}", &ctx.accounts.payer_ata.key());
+  msg!("Token Address: {}", ctx.accounts.payer_ata.key());
   token::mint_to(
     CpiContext::new_with_signer(
       ctx.accounts.token_program.to_account_info(),
@@ -126,7 +127,7 @@ pub struct CreateTokenMint<'info> {
   #[account(
     init,
     payer = payer,
-    space = 8 + 32,
+    space = 8,
     seeds = [
       MINT_AUTH_SEED_PREFIX,
       mint_account.key().as_ref(),

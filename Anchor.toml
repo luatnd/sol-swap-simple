@@ -19,8 +19,8 @@ url = "https://api.apr.dev"
 
 [provider]
 #cluster = "Localnet"
-#cluster = "devnet"
-cluster = "testnet"
+cluster = "devnet"
+#cluster = "testnet"
 wallet = "/Users/macos/.config/solana/id.json"
 
 [scripts]
