@@ -10,12 +10,17 @@ simple_liquidity_pool = "J7abyCWmhnmf6aDN5ibLrbvjTYTbPbx5myDt1BQuUE9P"
 move_token = "2simM1gHuCgquAVi2B1Q4baiU6UAxkNrrHEWkfcu3RaH"
 simple_liquidity_pool = "J7abyCWmhnmf6aDN5ibLrbvjTYTbPbx5myDt1BQuUE9P"
 
+[programs.testnet]
+move_token = "2simM1gHuCgquAVi2B1Q4baiU6UAxkNrrHEWkfcu3RaH"
+simple_liquidity_pool = "J7abyCWmhnmf6aDN5ibLrbvjTYTbPbx5myDt1BQuUE9P"
+
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
 #cluster = "Localnet"
-cluster = "devnet"
+#cluster = "devnet"
+cluster = "testnet"
 wallet = "/Users/macos/.config/solana/id.json"
 
 [scripts]

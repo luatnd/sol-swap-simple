@@ -67,6 +67,13 @@ export class AnchorBrowserClient {
   static isDevNet(connection) {
     return AnchorBrowserClient.getCluster(connection) === 'devnet';
   }
+  static isTestNet(connection) {
+    return AnchorBrowserClient.getCluster(connection) === 'testnet';
+  }
+  static isTestNetOrDevNet(connection) {
+    const env = AnchorBrowserClient.getCluster(connection)
+    return env === 'testnet' || env === 'devnet';
+  }
 
   // static getTokenMetadata(tokenMintAddress: string, connection: anchor.web3.Connection, wallet: anchor.Wallet) {
   //   const TOKEN_METADATA_PROGRAM_ID = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s";

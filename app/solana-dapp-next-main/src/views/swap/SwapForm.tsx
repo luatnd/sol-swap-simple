@@ -108,10 +108,10 @@ export default observer(function SwapForm(props: Props) {
   const [tx, setTx] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const submitForm = useCallback(() => {
-    // support devnet only
-    if (!AnchorBrowserClient.isDevNet(connection)) {
-      // throw new Error("devnet is required")
-      notify({type: "error", message: "Devnet is required"});
+    // check supported network
+    if (!AnchorBrowserClient.isTestNetOrDevNet(connection)) {
+      // throw new Error("Network not supported, plz use testnet or devnet")
+      notify({type: "error", message: "Network not supported, plz use testnet or devnet"});
       return;
     }
 

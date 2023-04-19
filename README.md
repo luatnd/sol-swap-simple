@@ -2,7 +2,7 @@
 - Token mint demo
 - Swap demo with fixed rate LP (not AMM)
 
-Demo UI here: https:// TODO deploy a static website and paste link here
+Demo UI here: [https://solana-fixed-rate-swap.web.app/](https://solana-fixed-rate-swap.web.app/)
 
 # Test
 ### Run all test

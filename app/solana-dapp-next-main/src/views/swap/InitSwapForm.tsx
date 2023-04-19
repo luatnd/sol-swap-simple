@@ -42,10 +42,10 @@ export default function InitSwapForm(props: Props) {
   }, [])
 
   const submitForm = useCallback(() => {
-    // support devnet only
-    if (!AnchorBrowserClient.isDevNet(connection)) {
-      // throw new Error("devnet is required")
-      notify({type: "error", message: "Devnet is required"});
+    // check supported network
+    if (!AnchorBrowserClient.isTestNetOrDevNet(connection)) {
+      // throw new Error("Network not supported, plz use testnet or devnet")
+      notify({type: "error", message: "Network not supported, plz use testnet or devnet"});
       return;
     }
 

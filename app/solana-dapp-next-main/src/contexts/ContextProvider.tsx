@@ -14,6 +14,7 @@ import { FC, ReactNode, useCallback, useMemo } from 'react';
 import { AutoConnectProvider, useAutoConnect } from './AutoConnectProvider';
 import { notify } from "../utils/notifications";
 import dynamic from "next/dynamic";
+import {HardcodedNetwork} from "../utils/env";
 
 const ReactUIWalletModalProviderDynamic = dynamic(
   async () =>
@@ -23,7 +24,9 @@ const ReactUIWalletModalProviderDynamic = dynamic(
 
 const WalletContextProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const { autoConnect } = useAutoConnect();
-    const network = WalletAdapterNetwork.Devnet;
+    const network = HardcodedNetwork == 'testnet'
+      ? WalletAdapterNetwork.Testnet
+      : WalletAdapterNetwork.Devnet;
     const endpoint = useMemo(() => clusterApiUrl(network), [network]);
 
     const wallets = useMemo(
