@@ -5,6 +5,7 @@
 !/anchor/README.md
 firebase.json
 .firebaserc
+.firebase/
 firebase-debug.log
 
 # dependencies

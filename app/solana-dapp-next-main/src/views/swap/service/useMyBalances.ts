@@ -6,7 +6,7 @@ import {NATIVE_MINT, NATIVE_MINT_2022} from "@solana/spl-token"
 import {LAMPORTS_PER_SOL} from "@solana/web3.js";
 
 export default function useMyBalances(tokenMintAddresses: anchor.web3.PublicKey[], refreshBalanceNonce: number) {
-  const [balances, setBalances] = useState<number[]>([]);
+  const [balances, setBalances] = useState<number[]>([0, 0]);
   const {connection} = useConnection();
   const wallet = useAnchorWallet();
 
@@ -26,6 +26,9 @@ export default function useMyBalances(tokenMintAddresses: anchor.web3.PublicKey[
       if (tokenMintAddress.equals(NATIVE_MINT)) {
         AnchorBrowserClient.getSolBalanceOf(connection, wallet.publicKey).then((balance) => {
           resolve(balance / LAMPORTS_PER_SOL)
+        }).catch(e => {
+          console.log('{useMyBalances} sol e: ', e);
+          resolve(0);
         });
       } else {
         AnchorBrowserClient.getSqlTokenBalanceOf(
@@ -34,6 +37,9 @@ export default function useMyBalances(tokenMintAddresses: anchor.web3.PublicKey[
           tokenMintAddress,
         ).then((tokenAmount) => {
           resolve(tokenAmount.uiAmount);
+        }).catch(e => {
+          console.log('{useMyBalances} token e: ', e);
+          resolve(0);
         });
       }
     }))

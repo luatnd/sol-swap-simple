@@ -4,7 +4,7 @@ import SwapForm from "../views/swap/SwapForm";
 import {useState} from "react";
 import InitSwapForm from "../views/swap/InitSwapForm";
 import {useRouter} from "next/router";
-import AddLpForm from "../views/swap/AddLpForm";
+import AddLiquid from "../views/swap/AddLiquid";
 
 const Home: NextPage = (props) => {
   const router = useRouter();
@@ -37,7 +37,7 @@ const Home: NextPage = (props) => {
             </div>
             <div className="tab-content w-full max-w-sm">
               {tab === 'init' && <InitSwapForm />}
-              {tab === 'add' && <AddLpForm />}
+              {tab === 'add' && <AddLiquid />}
               {tab === 'swap' && <SwapForm />}
             </div>
           </div>

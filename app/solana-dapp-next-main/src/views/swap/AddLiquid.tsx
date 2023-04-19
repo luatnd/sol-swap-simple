@@ -10,15 +10,16 @@ import BigNumber from "bignumber.js";
 import {fetchPrevMintToken, solToken} from "./service/token";
 import useMyBalances from "./service/useMyBalances";
 import {useRouter} from "next/router";
+import {addLiquidity, checkLpExistMemo, getLpBalances, initLp} from "./service/SwapService";
+import {NATIVE_MINT} from "@solana/spl-token";
 
 
 type Props = {}
-export default function AddLpForm(props: Props) {
+export default function AddLiquid(props: Props) {
   const router = useRouter();
   const wallet = useAnchorWallet();
   const { connection } = useConnection();
 
-  const RATE_SOL_TO_TOKEN_HARD_CODED = 10;
   const myToken = fetchPrevMintToken();
   const tokenAddresses = useMemo(() => {
     return [solToken.address, myToken.address];
@@ -32,48 +33,65 @@ export default function AddLpForm(props: Props) {
   const [amountTo, setAmountTo] = useState<string>("");
   const [symbolFrom, setSymbolFrom] = useState<string>(solToken.symbol);
   const [symbolTo, setSymbolTo] = useState<string>(myToken.symbol);
-  const [rate, setRate] = useState<string>(RATE_SOL_TO_TOKEN_HARD_CODED.toString());
 
-  // computed
+  const [existLpAddress, setExistLpAddress] = useState<string>("");
   useEffect(() => {
-    // don't parse float here, because we need to keep the precision
-    if (amountFrom.charAt(amountFrom.length - 1) === '.') {
-      return;
-    }
+    checkLpExistMemo(myToken.address, {
+      wallet: wallet as anchor.Wallet,
+      connection
+    }).then(addr => {
+      setExistLpAddress(addr);
+    })
+  }, [])
 
-    const a = new BigNumber(!!amountFrom ? amountFrom : 0);
-    const rateA2B = symbolFrom === solToken.symbol
-      ? RATE_SOL_TO_TOKEN_HARD_CODED
-      : 1 / RATE_SOL_TO_TOKEN_HARD_CODED
-    ;
-    setRate(rateA2B.toString());
-    setAmountTo(a.multipliedBy(rateA2B).toString());
-  }, [amountFrom, symbolFrom]);
-
-  // computed
+  const [lpBalance, setLpBalance] = useState<{base: number, quote: number}>({base: 0, quote: 0});
   useEffect(() => {
-    if (symbolFrom === solToken.symbol) {
-      setSymbolTo(myToken.symbol);
-    } else {
-      setSymbolTo(solToken.symbol);
-    }
-  }, [symbolFrom, setSymbolTo]);
-
-
-  const swapSymbol = useCallback(() => {
-    // new version of react: re-render only once
-    setSymbolFrom(symbolTo);
-    setAmountFrom(amountTo);
-  }, [setSymbolFrom, setAmountFrom, symbolTo, amountTo]);
-
-
+    getLpBalances(myToken.address, {
+      wallet: wallet as anchor.Wallet,
+      connection
+    }).then(res => {
+      setLpBalance(res);
+    })
+  }, [])
 
 
   const [tx, setTx] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const submitForm = useCallback(() => {
+    // support devnet only
+    if (!AnchorBrowserClient.isDevNet(connection)) {
+      // throw new Error("devnet is required")
+      notify({type: "error", message: "Devnet is required"});
+      return;
+    }
 
-  }, []);
+    setLoading(true);
+    addLiquidity(
+      myToken.address,
+      amountFrom,
+      amountTo,
+      {
+        wallet: wallet as anchor.Wallet,
+        connection,
+      }
+    ).then(({base, quote}) => {
+      // success
+      setTx(tx);
+      // hide alert box after 20s
+      setTimeout(() => {
+        setTx("");
+      }, 60000)
+
+      // update balances
+      setLpBalance({base, quote});
+      setRefreshBalanceNonce(refreshBalanceNonce + 1);
+    }).catch(e => {
+      console.error('{initLp} e: ', e);
+      notify({type: "error", message: e.message, txid: tx});
+    }).finally(() => {
+      setLoading(false);
+    })
+  }, [amountFrom, amountTo, myToken.address, wallet, connection, refreshBalanceNonce, setLpBalance ]);
 
 
   if (!myToken.address) {
@@ -101,7 +119,7 @@ export default function AddLpForm(props: Props) {
 
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text">You're going to swap</span>
+                    <span className="label-text">Base amount ({">"}=0)</span>
                   </label>
                   <label className="input-group">
                     <input
@@ -115,44 +133,18 @@ export default function AddLpForm(props: Props) {
 
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text">To get</span>
+                    <span className="label-text">Quote amount ({">"}=0)</span>
                   </label>
                   <label className="input-group">
                     <input
-                      type="number" placeholder="" required
-                      name="amountFrom" value={amountTo} disabled
+                      type="number" placeholder="0" required
+                      name="amountFrom" value={amountTo} onChange={(e) => setAmountTo(e.target.value)}
                       className="input input-bordered"
                     />
                     <span>{symbolTo}</span>
                   </label>
                 </div>
-
               </div>
-              <div className="basis-2/12">
-                <button onClick={swapSymbol} className="btn btn-circle btn-outline" style={{
-                  width: 60,
-                  height: 60,
-                  marginTop: 40,
-                  marginLeft: 20,
-                  padding: 10,
-                }}>
-                  <svg style={{
-                    height: '100%',
-                  }}>
-                    <use href="/swap-vertical-svgrepo-com.svg#my"></use>
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">With price</span>
-              </label>
-              <label className="input-group">
-                <span>1 {symbolFrom}</span>
-                <span>= {rate} {symbolTo}</span>
-              </label>
             </div>
 
             <div className="form-control mt-6">
@@ -165,19 +157,23 @@ export default function AddLpForm(props: Props) {
               </label>
             </div>
 
+            <div className="form-control mt-6">
+              <label className="label">
+                <span className="label-text">LP balance:</span>
+              </label>
+              <label className="input">
+                <p><b>{lpBalance.base}</b> {solToken.symbol}</p>
+                <p><b>{lpBalance.quote}</b> {myToken.symbol}</p>
+              </label>
+            </div>
+
           </div>
         </div>
 
+        <p className="text-gray-500">NOTE: All client-side validation was skipped, plz see error in dev console</p>
+
         <TxSuccessMsg tx={tx}/>
 
-        {!myToken.address && (
-          <div className="alert alert-warning shadow-lg">
-            <div>
-              <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-              <span>&nbsp;No minted token found. Please mint your token first so you can swap it here.</span>
-            </div>
-          </div>
-        )}
         <button
           type="submit"
           className={`${loading ? 'loading animate-pulse' : ''} group w-60 m-2 btn disabled:animate-none bg-gradient-to-r from-[#9945FF] to-[#14F195] hover:from-pink-500 hover:to-yellow-500 ... `}
@@ -190,7 +186,7 @@ export default function AddLpForm(props: Props) {
             }
           </div>
           <div className="block group-disabled:hidden">
-            Swap
+            Add to liquidity
           </div>
         </button>
       </form>
